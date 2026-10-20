@@ -3,3 +3,69 @@
 .review{margin-top:24px}.review details{font-size:12px;color:var(--muted)}
 
 .motion-toggle{margin-left:auto;margin-right:22px;font-size:11px;padding:6px 10px;color:var(--muted)}.village-scene{position:relative;height:370px;overflow:hidden;border:1px solid #3a5057;border-radius:16px;margin:0 0 24px;background:#172d36;isolation:isolate}.landscape{position:absolute;width:100%;height:100%;inset:0}.sky-top{stop-color:#101d31}.sky-bottom{stop-color:#36505a}.orb{fill:#e6dfba}.orb-halo{fill:#e8ddb0;opacity:.06}.mountain.far{fill:#263c4a}.mountain.near{fill:#233e44}.ground{fill:#213936}.clearing{fill:#405049}.pine{fill:#152d2d}.cottage{fill:#544b40}.roof{fill:#263638;stroke:#637170;stroke-width:2}.door{fill:#282c2a}.window{fill:#edbb72;filter:drop-shadow(0 0 5px #efb967)}.chimney{fill:#4c4941}.day .sky-top{stop-color:#82a6b0}.day .sky-bottom{stop-color:#d8d6b6}.day .mountain.far{fill:#879f99}.day .mountain.near{fill:#597e73}.day .ground{fill:#54725b}.day .clearing{fill:#879373}.day .pine{fill:#345b49}.day .cottage{fill:#9d8862}.day .window{fill:#d5c5a0;filter:none}.day .stars{opacity:0}.day .orb{fill:#fff0b8}.day .orb-halo{opacity:.2}.day .glow{opacity:.2}.secret{border-color:#a36f70;box-shadow:inset 0 0 80px #7a17232b}.secret .sky-top{stop-color:#301d2c}.secret .sky-bottom{stop-color:#513340}.scene-caption{position:absolute;left:26px;top:20px;z-index:5;color:#f1e5ca;text-shadow:0 2px 4px #14242d}.scene-caption span{display:block;font-size:14px;letter-spacing:1px}.scene-caption small{font-size:10px;opacity:.75}.campfire{position:absolute;left:50%;top:69%;width:65px;height:65px;transform:translate(-50%,-50%);z-index:3}.fire-aura{position:absolute;inset:-55px;background:radial-gradient(ellipse,#e79d4540,transparent 68%);animation:breathe 3s ease-in-out infinite}.log{position:absolute;bottom:2px;left:5px;background:#604434;border:2px solid #927153;width:58px;height:12px;border-radius:8px}.log-a{transform:rotate(20deg)}.log-b{transform:rotate(-20deg)}.flame{position:absolute;bottom:10px;border-radius:65% 10% 60% 40%;transform-origin:50% 100%;animation:flicker 1.6s ease-in-out infinite alternate;filter:drop-shadow(0 0 10px #e88642aa)}.flame-outer{left:12px;width:39px;height:60px;background:linear-gradient(#f4cf78,#e77a38)}.flame-inner{left:25px;width:21px;height:37px;background:#fff0b1;animation-delay:-.8s;animation-duration:1.1s}.ember{position:absolute;left:calc(16px + var(--i)*5px);bottom:35px;width:3px;height:3px;border-radius:50%;background:#f9d088;animation:rise calc(2s + var(--i)*.25s) linear infinite;animation-delay:calc(var(--i)*-.7s)}.mist{animation:drift 14s ease-in-out infinite alternate}.villager{position:absolute;transform:translate(-50%,-50%);width:106px;text-align:center;z-index:4}.portrait{position:relative;width:48px;height:59px;margin:auto;filter:drop-shadow(0 6px 4px #07181566)}.hood{position:absolute;top:0;left:6px;width:36px;height:36px;border-radius:48% 48% 35% 35%;background:var(--coat);border:2px solid #142b2f66}.face{position:absolute;left:14px;top:10px;width:20px;height:22px;background:#e2bd95;border-radius:40% 40% 45% 45%;display:flex;align-items:center;justify-content:center;gap:6px}.face i{height:3px;width:2px;background:#2a3232;border-radius:1px}.coat{position:absolute;bottom:0;left:3px;width:42px;height:30px;background:var(--coat);border-radius:15px 15px 4px 4px;border-bottom:5px solid #1b3039;clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}.villager-name{display:inline-block;background:#13272dd9;border:1px solid #8d9b8c55;border-radius:5px;padding:2px 7px;color:#f2e9d6;font-size:10px;max-width:106px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:top}.villager-name b{font-size:8px;color:#e6c891}.villager-name small{display:block;color:#abb8b9;font-size:8px}.speaking .portrait{filter:drop-shadow(0 0 8px #f4d38a)}.speaking .villager-name{border-color:#dfc48c}.speech-mark{position:absolute;left:50%;top:-24px;transform:translateX(-50%);border-radius:10px 10px 10px 0;background:#f0d8ac;color:#26363a;font-size:12px;line-height:18px;padding:0 7px;animation:breathe 1.5s ease-in-out infinite}.fallen .portrait{filter:grayscale(1);opacity:.4}.fallen .villager-name{color:#9baaaa}.ending-banner{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 25px;border:1px solid #d5b77e;background:#13272deb;color:#f2ddb5;white-space:nowrap;border-radius:30px;font-size:14px;z-index:6}.intro-scene{height:220px;margin:25px 0 0;max-width:540px}.intro-scene .scene-caption{display:none}.day-theme .game-heading h1{color:#e7e1bf}.day-theme .transcript{background:linear-gradient(130deg,#263d3b,#1b3033)}@keyframes flicker{0%{transform:rotate(-5deg) scale(.92,1)}50%{transform:rotate(5deg) scale(1.05,.94)}100%{transform:rotate(-2deg) scale(.95,1.08)}}@keyframes rise{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(calc(var(--i)*4px - 12px),-100px)}}@keyframes breathe{50%{opacity:.6}}@keyframes drift{to{transform:translateX(50px)}}.still *{animation:none!important}.still .ember{display:none}@media(prefers-reduced-motion:reduce){.village-scene *{animation:none!important}.ember{display:none}}@media(max-width:700px){.village-scene{height:310px}.scene-caption{left:14px;top:12px}.scene-caption small{font-size:9px}.villager{width:80px}.villager-name{max-width:80px;font-size:9px}.portrait{transform:scale(.85);margin-bottom:-7px}.motion-toggle{font-size:10px;margin-right:8px;padding:4px 7px}.connection{font-size:10px}.brand{font-size:18px}.ending-banner{font-size:11px;padding:6px 12px}.intro-scene{height:190px}}
+
+/* Reading and action hierarchy */
+:root{--muted:#becacc;--line:#43575e}
+body{font-size:16px;word-break:keep-all;overflow-wrap:break-word}
+main.game{padding-top:28px}
+.game-heading{margin-bottom:20px}
+label{font-size:14px;font-weight:600;color:#d5dedc}
+input,select,textarea{font-size:16px;line-height:1.6;min-height:46px}
+textarea{resize:vertical}
+button{font-size:14px;min-height:44px}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #f3d59e;outline-offset:4px}
+input:focus,select:focus,textarea:focus{outline:2px solid #dec397;outline-offset:2px}
+::placeholder{color:#aabbbc;opacity:1}
+.hint,.identity p,.action p,.lobby p,.waiting{font-size:14px;line-height:1.8}
+.eyebrow,.backend,.connection,.features{font-size:13px}
+.copy,.motion-toggle{font-size:12px;min-height:36px}
+.section-title h2,.action h2{font-size:18px;font-weight:700}
+.section-title>span{font-size:12px}
+.columns{grid-template-columns:190px minmax(320px,1fr) 300px;gap:18px}
+.roster li{font-size:14px;padding:12px 6px}
+.roster small,.role-small{font-size:12px}
+.badge{font-size:11px}
+.transcript{min-height:0;padding:24px}
+.event-list{height:520px;min-height:260px;max-height:65vh;scrollbar-gutter:stable}
+.event{padding:16px;margin:12px 0;border-left-width:3px;background:#20333b}
+.event.speech{background:#263f46}
+.event.private{background:#3a382e;border-left-color:#e6c58e}
+.event-meta{align-items:center;flex-wrap:wrap;font-size:15px;line-height:1.5}
+.event-meta span{font-size:12px;color:#d0d9d8}
+.event p{font-size:16px;line-height:1.85;margin-top:10px}
+.review details{font-size:15px}
+.review summary{cursor:pointer;padding:10px 0;color:#e5cfaa}
+.controls .action{order:-1;border-color:#9a896b;background:#24363b}
+.action h2{margin-bottom:12px;color:#f5dcad}
+.action .timer{display:inline-block;font-size:16px;font-weight:700;padding:5px 12px;border:1px solid #8e7e62;border-radius:6px;margin:0 0 6px;background:#17272e;font-variant-numeric:tabular-nums}
+.action .primary{min-height:48px;justify-content:center;font-size:16px;margin-top:20px}
+.identity{padding:20px}
+.identity h2{font-size:25px;margin:8px 0}
+.identity p{margin-bottom:0}
+.game>.village-scene{height:300px}
+.scene-caption{padding:8px 12px;border-radius:8px;background:#11252be8;left:16px;top:14px;text-shadow:none}
+.scene-caption span{font-size:15px}.scene-caption small{font-size:12px;opacity:1;color:#d0dad7}
+.villager-name{font-size:12px}.villager-name b,.villager-name small{font-size:10px}
+footer{font-size:12px}
+@media(max-width:1150px){
+ .columns{grid-template-columns:minmax(0,1fr) 300px}
+ .roster{grid-column:1/-1;grid-row:2}
+ .roster ul{display:flex;flex-wrap:wrap;gap:8px}
+ .roster li{min-width:130px}
+ .controls{grid-column:auto;grid-template-columns:1fr}
+ .controls>.hint{grid-column:auto}
+ .brand small{display:none}
+}
+@media(max-width:700px){
+ header{padding:0 4vw;gap:8px}.brand{font-size:18px;white-space:nowrap}.moon{margin-right:4px}
+ .motion-toggle{margin-right:0;margin-left:auto;font-size:11px;padding:6px}.connection{font-size:11px;white-space:nowrap}.connection i{margin-right:4px}
+ main.game{padding:22px 4vw}.game-heading{gap:12px}.game-heading h1{font-size:27px}
+ .backend{font-size:12px;max-width:135px}.eyebrow{font-size:12px;letter-spacing:.5px}
+ .columns{display:flex;flex-direction:column}.columns>*{width:100%}
+ .controls{order:-1;display:flex;flex-direction:column;gap:12px}.controls .action{order:-1}
+ .controls>.hint{margin:0}.identity{padding:16px 20px}.identity h2{display:inline-block;margin:0 0 0 12px;font-size:21px}
+ .transcript{padding:18px}.event-list{height:430px;max-height:65vh}.event{padding:14px 12px}
+ .roster{order:2}.roster ul{flex-wrap:nowrap;overflow-x:auto}.roster li{min-width:125px}
+ .game>.village-scene{height:290px}.scene-caption{left:10px;top:10px;padding:6px 9px}.scene-caption span{font-size:13px}.scene-caption small{font-size:11px}
+ .villager-name{font-size:11px}.card{border-radius:12px}.action{padding:20px}
+}
