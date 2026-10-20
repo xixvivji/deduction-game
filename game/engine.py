@@ -27,7 +27,8 @@ class Game:
         self.room_id = room_id
         self.rng = random.Random(seed)
         wolves = 1 if len(controllers) == 5 else 2
-        roles = ["wolf"] * wolves + ["seer"] + ["citizen"] * (len(controllers) - wolves - 1)
+        specials = ["seer", "doctor"] if len(controllers) == 7 else ["seer"]
+        roles = ["wolf"] * wolves + specials + ["citizen"] * (len(controllers) - wolves - len(specials))
         self.rng.shuffle(roles)
         self.players = {pid: Player(pid, c, role) for (pid, c), role in zip(controllers.items(), roles)}
         self.phase, self.day, self.version = "night", 1, 0
@@ -35,6 +36,7 @@ class Game:
         self.actions, self.votes, self.speeches = {}, {}, {}
         self.events, self.commands = [], {}
         self.council = {}
+        self.last_protected = {}
         self._emit("시작", {"day": self.day})
 
     def _emit(self, kind, data, recipient=None):
@@ -65,8 +67,10 @@ class Game:
             if actor in self.actions or location not in self.LOCATIONS:
                 raise RuleError("중복 행동 또는 잘못된 장소입니다")
             if target is not None:
-                if not isinstance(target, str) or target not in self.living() or target == actor:
+                if not isinstance(target, str) or target not in self.living() or (target == actor and p.role != "doctor"):
                     raise RuleError("잘못된 대상입니다")
+                if p.role == "doctor" and self.last_protected.get(actor) == target:
+                    raise RuleError("같은 대상을 연속으로 보호할 수 없습니다")
                 if p.role == "citizen" or (p.role == "wolf" and self.day == 1):
                     raise RuleError("현재 사용할 수 없는 능력입니다")
                 if p.role == "wolf" and self.players[target].role == "wolf":
@@ -129,6 +133,16 @@ class Game:
             # 살아 있는 늑대 전원이 같은 대상을 선택해야 한 명만 공격한다.
             targets = [a["target"] for pid, a in self.actions.items() if self.players[pid].role == "wolf"]
             victim = targets[0] if targets and targets[0] is not None and len(set(targets)) == 1 else None
+            protected = set()
+            for pid, action in self.actions.items():
+                if self.players[pid].role == "doctor":
+                    target = action["target"]
+                    self.last_protected[pid] = target
+                    if target is not None:
+                        protected.add(target)
+                        private.append((pid, "보호 선택", {"target": target, "day": self.day}))
+            if victim in protected:
+                victim = None
             if victim is not None:
                 self.players[victim].alive = False
             for pid, kind, data in private:
@@ -187,6 +201,8 @@ class Game:
                   "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
                   "events": [e for e in self.events if e["recipient"] in (None, viewer) or (isinstance(e["recipient"], list) and viewer in e["recipient"]) or self.phase == "finished"]}
+        if self.players[viewer].role == "doctor":
+            result["self"]["last_protected"] = self.last_protected.get(viewer)
         if self.players[viewer].role == "wolf":
             result["self"]["allies"] = [p.id for p in self.players.values() if p.role == "wolf" and p.id != viewer]
         if self.phase == "finished":
@@ -210,6 +226,7 @@ class Game:
         game = cls.__new__(cls)
         random_state = data.pop("random_state")
         game.__dict__.update(data)
+        game.last_protected = data.get("last_protected", {})
         game.players = {k: Player(**v) for k, v in data["players"].items()}
         game.commands = {tuple(k): ((v[0][0], v[0][1]), v[1]) for k, v in data["commands"]}
         game.rng = random.Random()
