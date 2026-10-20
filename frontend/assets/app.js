@@ -1,6 +1,13 @@
 const {createApp,nextTick}=Vue;
+const VillageScene={
+ props:{people:{type:Array,default:()=>[]},phase:String,active:String,names:Object,selfId:String,winner:String,reduced:Boolean,role:String},
+ computed:{night(){return !['discussion','vote'].includes(this.phase)},secret(){return this.phase==='council'&&this.role==='wolf'}},
+ methods:{position(i){const a=(i/this.people.length)*Math.PI*2-Math.PI/2;return {left:(50+Math.cos(a)*31)+'%',top:(65+Math.sin(a)*21)+'%','--coat':['#a47367','#839e9a','#c4a66d','#8d8caf','#7c9876','#bc8c6b','#9c8193'][i%7]}},name(p){return this.names?.[p.id]||'AI '+p.id.replace('p','')}},
+ template:document.getElementById('village-template').innerHTML
+};
 createApp({
- data(){return {name:'',code:'',size:7,state:null,session:null,connected:false,loading:false,error:'',text:'',target:'',location:'광장',now:Date.now(),socket:null,retry:null,ticker:null}},
+ components:{VillageScene},
+ data(){return {reduced:window.matchMedia('(prefers-reduced-motion: reduce)').matches,name:'',code:'',size:7,state:null,session:null,connected:false,loading:false,error:'',text:'',target:'',location:'광장',now:Date.now(),socket:null,retry:null,ticker:null}},
  computed:{
  phaseName(){return ({lobby:'마을 대기실',night:'밤의 행동',council:'밤의 비밀 협의',discussion:'낮의 토론',vote:'추방 투표',finished:'사건의 끝'})[this.state?.phase]||'마을'},
  participants(){if(this.state.players.length)return this.state.players;return Array.from({length:this.state.size},(_,i)=>({id:'p'+i,alive:true,controller:this.state.members['p'+i]?'human':'ai'}))},
