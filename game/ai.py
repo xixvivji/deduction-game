@@ -41,6 +41,17 @@ def validate(payload, schema):
             raise ValueError("발언 길이가 올바르지 않습니다")
 
 
+def prompt_messages(view, feedback=None):
+    context = {"observation": view, "action": action_spec(view)[0], "previous_error": feedback}
+    system = SYSTEM + (
+                    "\n당신은 늑대다. 공개 발언에서는 시민인 척하며 살아남아라. 자신의 늑대 정체와 동료 ID를 절대 공개하지 마라. 개인 정보는 판단에만 이용하고 그대로 낭독하지 마라."
+                    if view["self"]["role"] == "wolf" else
+                    "\n당신은 시민 진영이다. 증거에 따라 추리하고, 모르는 타인의 역할을 확정적으로 단정하지 마라. 조사자는 자기 조사 결과를 공개할지 전략적으로 결정할 수 있다."
+                )
+    return [{"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(context, ensure_ascii=False)}]
+
+
 class OllamaClient:
     def __init__(self, model="qwen3:4b-instruct", base_url="http://127.0.0.1:11434", timeout=60):
         self.model, self.base_url, self.timeout = model, base_url.rstrip("/"), timeout
@@ -53,15 +64,9 @@ class OllamaClient:
             raise ValueError(f"설치되지 않은 모델: {self.model}. 설치 모델: {names}")
 
     def generate(self, view, schema, feedback=None):
-        context = {"observation": view, "action": action_spec(view)[0], "previous_error": feedback}
-        # 이 요청은 전체 Game 객체나 다른 참가자의 개인 기록을 받지 않는다.
         body = {"model": self.model, "stream": False, "think": False,
-                "messages": [{"role": "system", "content": SYSTEM + (
-                    "\n당신은 늑대다. 공개 발언에서는 시민인 척하며 살아남아라. 자신의 늑대 정체와 동료 ID를 절대 공개하지 마라. 개인 정보는 판단에만 이용하고 그대로 낭독하지 마라."
-                    if view["self"]["role"] == "wolf" else
-                    "\n당신은 시민 진영이다. 증거에 따라 추리하고, 모르는 타인의 역할을 확정적으로 단정하지 마라. 조사자는 자기 조사 결과를 공개할지 전략적으로 결정할 수 있다."
-                )}, {"role": "user", "content": json.dumps(context, ensure_ascii=False)}],
-                "format": schema, "options": {"temperature": 0.4, "num_predict": 384, "num_ctx": 8192}}
+                "messages": prompt_messages(view, feedback), "format": schema,
+                "options": {"temperature": 0.4, "num_predict": 384, "num_ctx": 8192}}
         started = time.perf_counter()
         metric = {"actor": view["self"]["id"], "phase": view["phase"], "model": self.model, "input_tokens": None, "output_tokens": None, "success": False}
         try:
@@ -91,6 +96,8 @@ def take_turn(game, actor, client):
             return {"attempts": attempt + 1, "fallback": False}
         except (ValueError, KeyError, TypeError, URLError, TimeoutError, OSError) as error:
             feedback = str(error)[:300]
+            if attempt == 0:
+                time.sleep(1)
     view = game.observation(actor)
     kind, _ = action_spec(view)
     payload = {"text": "현재 정보로는 판단을 보류하겠습니다."} if kind == "speak" else {"target": None}

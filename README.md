@@ -60,3 +60,31 @@ python3 -m game.play --auto --max-days 1 --seed 42 --metrics /tmp/game-metrics.j
 단위 테스트 17개로 기존 5인 규칙, 7인 공동 공격, 정보 분리, 모델 실패 시 기본 행동, 사용자 입력 재시도를 확인했습니다. 실제 Ollama의 7인 1일 자동 진행 및 최종 코드의 2일 자동 진행을 종료까지 확인했습니다. 0.6B 모델은 발언 반복이 많았고 4B 모델에서도 잘못된 추론과 자발적인 역할 공개가 관찰되어 역할별 지시를 보완했습니다. 보완 후 늑대 발언 두 건에서 정체 공개가 없었지만, 비밀 유지나 추리 품질을 보장하는 평가 결과는 아닙니다.
 
 아직 늑대 비밀 협의, 플레이 저장/재개, 웹 화면, 네트워크 멀티, LangGraph/RAG/MCP 연결은 없습니다. 현재 AI 모듈은 순차 제어 구조이며, 이후 그래프 적용 전 비교 기준으로도 사용할 수 있습니다.
+
+## OpenAI / Gemini 선택
+
+Ollama와 동일한 역할별 입력과 행동 검증을 사용합니다. OpenAI는 Responses API, Gemini는 generateContent API에 구조화 출력 스키마를 보냅니다. 추가 Python 패키지는 필요 없습니다.
+
+외부 API 키는 각각 `OPENAI_API_KEY`, `GEMINI_API_KEY` 환경변수로 서버 프로세스에 설정하세요. 채팅이나 Git에 키를 붙여 넣지 마세요. `.env` 자동 로딩은 현재 지원하지 않습니다. IDE의 실행 환경변수 설정도 사용할 수 있습니다.
+
+아래 `YOUR_MODEL_ID`는 본인 계정에서 사용 가능한 구조화 출력 지원 모델 ID로 교체해야 합니다. 자동으로 유료 모델을 선택하거나 API를 호출하지 않습니다.
+
+```sh
+python3 -m game.play --provider openai --model YOUR_MODEL_ID --max-calls 50
+python3 -m game.play --provider gemini --model YOUR_MODEL_ID --max-calls 50
+python3 -m game.play --provider ollama --model qwen3:8b
+```
+
+- 기본은 Ollama입니다. 외부 제공자는 `--model`이 필수입니다.
+- 키는 인증 헤더에만 포함하고 호출 통계에 기록하지 않습니다. 외부 모델을 선택하면 해당 참가자에게 허용된 게임 기록이 제공자에게 전송됩니다.
+- `--max-calls` 기본 200회는 재시도를 포함한 생성 시도 상한입니다. 한도 도달 시 게임을 중단하며, 자동 저장/재개는 아직 없습니다. 이것은 금액 한도가 아닙니다.
+- `--max-output-tokens` 기본 1024는 외부 API 출력 한도입니다. 사고형 모델에서는 사고 토큰으로 인해 출력이 잘릴 수 있습니다. 모델별 설정과 가격은 별도 확인이 필요합니다.
+- 인증/모델/요청 오류(400/401/403/404)는 즉시 중단합니다. 기타 호출/검증 실패는 1초 대기 후 한 번 재시도하고 기본 행동으로 대체합니다.
+- OpenAI 저장 옵션은 `store=false`로 지정합니다. 이것이 제공자의 모든 데이터 보존 정책을 해제한다는 의미는 아닙니다.
+- 입력/출력/총 토큰을 제공자 반환값으로 기록하고, Gemini 사고 토큰은 별도로 보관합니다. 누락된 사용량은 null이며 임의 금액을 계산하지 않습니다.
+
+외부 API는 모의 응답 기반 계약/오류 테스트까지 완료했습니다. 실제 키를 사용한 OpenAI·Gemini 통합 실행, 모델별 스키마 지원 여부 및 품질 비교는 아직 검증하지 않았습니다.
+
+참고 문서:
+- [OpenAI 구조화 출력](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [Gemini 구조화 출력](https://ai.google.dev/gemini-api/docs/generate-content/structured-output)

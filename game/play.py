@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 from uuid import uuid4
 from .engine import Game, RuleError
-from .ai import OllamaClient, take_turn, action_spec
+from .ai import take_turn, action_spec
+from .providers import create_client, ProviderError
 
 
 def human_turn(game, actor):
@@ -30,18 +31,21 @@ def human_turn(game, actor):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--players", type=int, choices=(5, 7), default=7)
-    parser.add_argument("--model", default="qwen3:4b-instruct")
-    parser.add_argument("--base-url", default="http://127.0.0.1:11434")
+    parser.add_argument("--provider", choices=("ollama", "openai", "gemini"), default="ollama")
+    parser.add_argument("--model", help="외부 API 사용 시 필수")
+    parser.add_argument("--max-calls", type=int, default=200)
+    parser.add_argument("--max-output-tokens", type=int, default=1024, help="외부 API 출력 한도")
+    parser.add_argument("--base-url", help="Ollama 서버 주소")
     parser.add_argument("--seed", type=int, default=None, help="재현 실험용. 일반 플레이에서는 생략")
     parser.add_argument("--auto", action="store_true", help="모든 참가자를 실제 AI로 실행")
     parser.add_argument("--max-days", type=int, default=8)
     parser.add_argument("--metrics", type=Path, help="발언·역할을 제외한 호출 통계 JSON 저장 위치")
     args = parser.parse_args()
-    client = OllamaClient(args.model, args.base_url)
     try:
+        client = create_client(args.provider, args.model, base_url=args.base_url, max_calls=args.max_calls, max_output_tokens=args.max_output_tokens)
         client.check()
-    except (OSError, ValueError, KeyError) as error:
-        parser.exit(1, f"Ollama 연결 실패: {error}\n먼저 ollama serve를 실행하고 --model에 설치 모델을 지정하세요.\n")
+    except (OSError, ValueError, KeyError, ProviderError) as error:
+        parser.exit(1, f"모델 설정 확인 실패: {error}\n")
     game = Game(str(uuid4()), {f"p{i}": "human" if i == 0 and not args.auto else "ai" for i in range(args.players)}, seed=args.seed, max_days=args.max_days)
     human = "p0"
     seen, turns = 0, []
@@ -72,6 +76,8 @@ def main():
             game.advance()
         show()
         print("최종 역할:", game.observation(human)["roles"])
+    except ProviderError as error:
+        print(f"\n게임 일시 중단: {error}. 저장/재개는 아직 지원하지 않습니다.")
     except (KeyboardInterrupt, EOFError):
         print("\n게임을 종료했습니다. 진행 상태 저장은 아직 지원하지 않습니다.")
     finally:
