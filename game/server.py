@@ -31,6 +31,12 @@ class DemoClient:
     def __init__(self): self.metrics = []
     def check(self): pass
     def generate(self, view, schema, feedback=None):
+        payload = self._action(view, schema)
+        if "decision_summary" in schema["properties"]:
+            payload.update(decision_summary="규칙 봇의 기본 선택입니다.", evidence_ids=[])
+        return payload
+
+    def _action(self, view, schema):
         kind = action_spec(view)[0]
         if kind == "speak": return {"text": "[규칙 봇] 아직 판단할 근거가 부족합니다."}
         payload = {"target": None}
@@ -163,7 +169,7 @@ class Hub:
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
                     room.busy = False
-                    room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"]})
+                    room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
                     room.data["metrics"].extend(room.client.metrics)
                     room.client.metrics.clear()
                     room.data["calls"] = getattr(room.client,"calls",room.data["calls"])

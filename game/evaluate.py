@@ -51,7 +51,7 @@ def main():
                         start=time.perf_counter();offset=len(client.metrics)
                         result=decide(view,client,mode)
                         row.update(seconds=round(time.perf_counter()-start,3),correct=result['payload'].get('target')==case['expected_target'],
-                                   attempts=result['attempts'],fallback=result['fallback'],selected_target=result['payload'].get('target'),expected_target=case['expected_target'],calls=client.metrics[offset:])
+                                   attempts=result['attempts'],fallback=result['fallback'],audit=result['audit'],selected_target=result['payload'].get('target'),expected_target=case['expected_target'],calls=client.metrics[offset:])
                     rows.append(row)
     report={'scope':'합성 조사 결과 기반 투표 4개 상황. 추리 전반·역할 누설·승률 평가가 아님. 최초 모델 로딩 시간 포함.',
             'fixture_version':2,'dry_run':args.dry_run,'rows':rows}

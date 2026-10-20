@@ -132,3 +132,9 @@ Git Flow (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) 및 타입 + 
 
 - https://developers.openai.com/api/docs/guides/structured-outputs
 - https://ai.google.dev/gemini-api/docs/generate-content/structured-output
+
+## AI 선택 근거 회고
+
+웹 AI는 행동과 함께 짧은 `decision_summary`, 최대 3개의 `evidence_ids`를 반환합니다. 검색 후 실제 모델에 전달된 기록 ID인지 검사하고, 잘못된 ID/중복/형식은 재시도 대상으로 처리합니다. 근거가 없는 선택은 빈 인용 배열을 허용합니다.
+
+근거 요약과 인용은 공개 발언과 분리해 서버에 저장하며 게임 종료 전에는 다른 참가자에게 제공하지 않습니다. 종료 후 화면의 **AI 선택 회고**와 JSON 다운로드에서 확인합니다. 이는 모델의 내부 사고 과정이 아니라 짧은 선택 설명입니다. 인용 ID가 유효해도 내용이 판단을 뒷받침한다는 보장은 없으며 의미적 근거 적합성은 `not_evaluated`로 표시합니다. 이전 게임 기록도 회고 필드 없이 열 수 있습니다.

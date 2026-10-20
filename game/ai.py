@@ -13,7 +13,10 @@ SYSTEM = """당신은 턴제 늑대인간 게임 참가자다. 한국어로 플�
 목격은 같은 장소에 있었다는 뜻이며 범행 여부나 전체 동선을 증명하지 않는다.
 첫 밤은 공격 불가. 늑대들은 전원 같은 목표를 선택해야 공격이 성공한다.
 발언은 2~3문장, 500자 이하. 같은 말 반복을 피하고 다른 발언에 반응하라. 규칙 설명을 반복하지 말고 구체적인 참가자 ID, 목격 또는 발언을 근거로 말하라.
-요청된 JSON 객체만 출력하라."""
+요청된 JSON 객체만 출력하라.
+스키마가 decision_summary를 요구하면 선택을 설명하는 짧은 근거 요약(200자 이하)만 작성하라. 내부 사고 과정은 쓰지 마라.
+evidence_ids에는 실제로 전달받은 events의 sequence를 최대 3개 인용하라. 근거가 없으면 빈 배열을 사용한다.
+근거 요약은 게임 종료 후 공개되는 회고용이며 지금 공개할 발언(text)과 구분한다."""
 
 
 def action_spec(view):
@@ -43,8 +46,11 @@ def validate(payload, schema):
         value = payload[key]
         if "enum" in spec and value not in spec["enum"]:
             raise ValueError(f"{key}: 허용된 값이 아닙니다")
-        if spec.get("type") == "string" and (not isinstance(value, str) or not 1 <= len(value.strip()) <= 500):
-            raise ValueError("발언 길이가 올바르지 않습니다")
+        if spec.get("type") == "string" and (not isinstance(value, str) or not spec.get("minLength", 1) <= len(value.strip()) <= spec.get("maxLength", 500)):
+            raise ValueError("문자열 길이가 올바르지 않습니다")
+        if spec.get("type") == "array":
+            if not isinstance(value, list) or len(value) > spec.get("maxItems", 3) or any(type(i) is not int for i in value):
+                raise ValueError("기록 ID는 최대 3개의 정수여야 합니다")
 
 
 def prompt_messages(view, feedback=None):
