@@ -19,6 +19,8 @@ def human_turn(game, actor):
             print("선택 가능한 대상:", [t for t in targets if t is not None], "빈칸=기권/능력 미사용")
             target = (input("대상 ID: ").strip() or None) if len(targets) > 1 else None
             payload = {"target": target}
+            if kind == "council":
+                payload["text"] = input("늑대 동료에게 제안할 이유: ").strip() or "이 대상을 제안합니다."
             if kind == "night":
                 payload["location"] = input("장소 (광장/창고/숲길, 기본 광장): ").strip() or "광장"
         try:
@@ -64,6 +66,8 @@ def main():
             rounds = 2 if game.phase == "discussion" else 1
             for _ in range(rounds):
                 for actor in game.living():
+                    if game.phase == "council" and game.players[actor].role != "wolf":
+                        continue
                     if game.players[actor].controller == "human":
                         human_turn(game, actor)
                     else:

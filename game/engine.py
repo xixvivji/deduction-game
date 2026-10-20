@@ -34,6 +34,7 @@ class Game:
         self.max_days, self.winner = max_days, None
         self.actions, self.votes, self.speeches = {}, {}, {}
         self.events, self.commands = [], {}
+        self.council = {}
         self._emit("시작", {"day": self.day})
 
     def _emit(self, kind, data, recipient=None):
@@ -71,6 +72,17 @@ class Game:
                 if p.role == "wolf" and self.players[target].role == "wolf":
                     raise RuleError("동료 늑대를 공격할 수 없습니다")
             self.actions[actor] = {"location": location, "target": target}
+        elif kind == "council" and self.phase == "council":
+            if p.role != "wolf" or actor in self.council:
+                raise RuleError("협의에 참여할 수 없습니다")
+            if set(payload) != {"text", "target"} or not isinstance(payload["text"], str) or not 1 <= len(payload["text"].strip()) <= 500:
+                raise RuleError("협의 발언은 1~500자입니다")
+            target = payload["target"]
+            if target is not None and (target not in self.living() or self.players[target].role == "wolf"):
+                raise RuleError("잘못된 공격 제안입니다")
+            self.council[actor] = dict(payload)
+            recipients = [q.id for q in self.players.values() if q.alive and q.role == "wolf"]
+            self._emit("비밀 협의", {"actor": actor, **payload, "day": self.day}, recipients)
         elif kind == "speak" and self.phase == "discussion":
             if set(payload) != {"text"} or not isinstance(payload["text"], str):
                 raise RuleError("발언 문자열이 필요합니다")
@@ -96,7 +108,12 @@ class Game:
         """서버 스케줄러 전용. 공개 플레이어 명령으로 노출하지 않는다."""
         if self.phase == "finished":
             raise RuleError("종료된 게임입니다")
-        if self.phase == "night":
+        if self.phase == "council":
+            wolves = [p.id for p in self.players.values() if p.alive and p.role == "wolf"]
+            if not timeout and any(pid not in self.council for pid in wolves):
+                raise RuleError("협의가 아직 완료되지 않았습니다")
+            self.phase = "night"
+        elif self.phase == "night":
             if not timeout and len(self.actions) != len(self.living()):
                 raise RuleError("밤 행동이 아직 완료되지 않았습니다")
             for pid in self.living():
@@ -142,7 +159,8 @@ class Game:
                     self._finish("draw")
                 else:
                     self.day += 1
-                    self.phase = "night"
+                    self.phase = "council"
+                    self.council = {}
                     self.votes, self.speeches = {}, {}
                     self._emit("밤 시작", {"day": self.day})
         self.version += 1
@@ -168,9 +186,32 @@ class Game:
                   "version": self.version, "winner": self.winner,
                   "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
-                  "events": [e for e in self.events if e["recipient"] in (None, viewer) or self.phase == "finished"]}
+                  "events": [e for e in self.events if e["recipient"] in (None, viewer) or (isinstance(e["recipient"], list) and viewer in e["recipient"]) or self.phase == "finished"]}
         if self.players[viewer].role == "wolf":
             result["self"]["allies"] = [p.id for p in self.players.values() if p.role == "wolf" and p.id != viewer]
         if self.phase == "finished":
             result["roles"] = {p.id: p.role for p in self.players.values()}
         return copy.deepcopy(result)
+
+    def snapshot(self):
+        import copy
+        state = copy.deepcopy({k: v for k, v in self.__dict__.items() if k not in ("rng", "players", "commands")})
+        state["players"] = {k: vars(v).copy() for k, v in self.players.items()}
+        state["commands"] = [[list(k), v] for k, v in self.commands.items()]
+        state["random_state"] = self.rng.getstate()
+        return state
+
+    @classmethod
+    def restore(cls, state):
+        import copy
+        data = copy.deepcopy(state)
+        def tuples(value):
+            return tuple(tuples(v) for v in value) if isinstance(value, (list, tuple)) else value
+        game = cls.__new__(cls)
+        random_state = data.pop("random_state")
+        game.__dict__.update(data)
+        game.players = {k: Player(**v) for k, v in data["players"].items()}
+        game.commands = {tuple(k): ((v[0][0], v[0][1]), v[1]) for k, v in data["commands"]}
+        game.rng = random.Random()
+        game.rng.setstate(tuples(random_state))
+        return game

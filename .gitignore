@@ -9,3 +9,8 @@ __pycache__/
 
 .env.*
 !.env.example
+
+node_modules/
+runtime/
+*.db-shm
+*.db-wal
