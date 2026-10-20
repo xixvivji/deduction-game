@@ -20,13 +20,14 @@ class Game:
     LOCATIONS = ("광장", "창고", "숲길")
 
     def __init__(self, room_id, controllers, *, seed=None, max_days=8):
-        if len(controllers) != 5 or any(c not in ("human", "ai") for c in controllers.values()):
-            raise RuleError("참가자는 human/ai로 구성된 5명이어야 합니다")
+        if len(controllers) not in (5, 7) or any(c not in ("human", "ai") for c in controllers.values()):
+            raise RuleError("참가자는 human/ai로 구성된 5명 또는 7명이어야 합니다")
         if max_days < 1:
             raise RuleError("최대 일수는 1 이상이어야 합니다")
         self.room_id = room_id
         self.rng = random.Random(seed)
-        roles = ["wolf", "seer", "citizen", "citizen", "citizen"]
+        wolves = 1 if len(controllers) == 5 else 2
+        roles = ["wolf"] * wolves + ["seer"] + ["citizen"] * (len(controllers) - wolves - 1)
         self.rng.shuffle(roles)
         self.players = {pid: Player(pid, c, role) for (pid, c), role in zip(controllers.items(), roles)}
         self.phase, self.day, self.version = "night", 1, 0
@@ -63,10 +64,12 @@ class Game:
             if actor in self.actions or location not in self.LOCATIONS:
                 raise RuleError("중복 행동 또는 잘못된 장소입니다")
             if target is not None:
-                if target not in self.living() or target == actor:
+                if not isinstance(target, str) or target not in self.living() or target == actor:
                     raise RuleError("잘못된 대상입니다")
                 if p.role == "citizen" or (p.role == "wolf" and self.day == 1):
                     raise RuleError("현재 사용할 수 없는 능력입니다")
+                if p.role == "wolf" and self.players[target].role == "wolf":
+                    raise RuleError("동료 늑대를 공격할 수 없습니다")
             self.actions[actor] = {"location": location, "target": target}
         elif kind == "speak" and self.phase == "discussion":
             if set(payload) != {"text"} or not isinstance(payload["text"], str):
@@ -106,11 +109,11 @@ class Game:
                 if self.players[pid].role == "seer" and action["target"]:
                     target = action["target"]
                     private.append((pid, "조사", {"target": target, "team": "wolf" if self.players[target].role == "wolf" else "village", "day": self.day}))
-            victim = None
-            for pid, action in self.actions.items():
-                if self.players[pid].role == "wolf" and action["target"]:
-                    victim = action["target"]
-                    self.players[victim].alive = False
+            # 살아 있는 늑대 전원이 같은 대상을 선택해야 한 명만 공격한다.
+            targets = [a["target"] for pid, a in self.actions.items() if self.players[pid].role == "wolf"]
+            victim = targets[0] if targets and targets[0] is not None and len(set(targets)) == 1 else None
+            if victim is not None:
+                self.players[victim].alive = False
             for pid, kind, data in private:
                 if self.players[pid].alive:
                     self._emit(kind, data, pid)
@@ -166,6 +169,8 @@ class Game:
                   "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
                   "events": [e for e in self.events if e["recipient"] in (None, viewer) or self.phase == "finished"]}
+        if self.players[viewer].role == "wolf":
+            result["self"]["allies"] = [p.id for p in self.players.values() if p.role == "wolf" and p.id != viewer]
         if self.phase == "finished":
             result["roles"] = {p.id: p.role for p in self.players.values()}
         return copy.deepcopy(result)
