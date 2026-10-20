@@ -21,6 +21,11 @@ from .providers import create_client, ProviderError
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def public_citations(view, ids):
+    public_ids = {e["sequence"] for e in view["events"] if e["recipient"] is None}
+    return [i for i in ids if i in public_ids]
+
+
 def digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -38,7 +43,7 @@ class DemoClient:
 
     def _action(self, view, schema):
         kind = action_spec(view)[0]
-        if kind == "speak": return {"text": "[규칙 봇] 아직 판단할 근거가 부족합니다."}
+        if kind == "speak": return {"text": "[규칙 봇] 질문을 받았습니다. 실제 기억 기반 답변은 AI 모드에서 제공합니다." if view.get("question") else "[규칙 봇] 아직 판단할 근거가 부족합니다."}
         payload = {"target": None}
         if kind == "night": payload["location"] = "광장"
         if kind == "council":
@@ -118,6 +123,8 @@ class Hub:
         # 개인 타이머도 늑대 협의 중에는 시민에게 공개하지 않는다.
         view["deadline"] = room.data["deadline"] if not g or g.phase != "council" or g.players[pid].role == "wolf" else None
         view["action"] = {"kind":action_spec(view)[0],"schema":action_spec(view)[1]} if allowed else None
+        view["question_targets"] = list(dict.fromkeys(p for p in room.data["queue"][room.data["index"]+1:]
+            if g and g.phase == "discussion" and p != pid and g.players[p].controller == "ai" and g.players[p].alive and g.speeches.get(p, 0) < 2)) if allowed else []
         if g and g.phase == "finished":
             view["report"] = {"decisions":room.data["history"], "metrics":room.data["metrics"]}
         return view
@@ -168,6 +175,9 @@ class Hub:
                     outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"])
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
+                    if ai_view.get("question"):
+                        # Only public citations are attached to the public answer, never private audit summaries.
+                        g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
                     room.busy = False
                     room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
                     room.data["metrics"].extend(room.client.metrics)
@@ -294,7 +304,14 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                 g.submit(pid,body.command_id,body.version,body.kind,**body.payload)
                 return hub.view(room,pid)
             if room.data["status"]!="running" or hub.active(room)!=pid: raise RuleError("지금은 내 차례가 아닙니다")
+            if body.kind == "question":
+                target = body.payload.get("target")
+                if target not in hub.view(room,pid)["question_targets"]: raise RuleError("답변 차례가 남아 있는 AI를 선택하세요")
             g.submit(pid,body.command_id,body.version,body.kind,**body.payload)
+            if body.kind == "question":
+                q = room.data["queue"]
+                target_index = q.index(body.payload["target"], room.data["index"]+1)
+                q.insert(room.data["index"]+1, q.pop(target_index))
             room.data["index"]+=1;room.data["deadline"]=time.time()+hub.turn_seconds
             hub.save(room)
         return hub.view(room,pid)

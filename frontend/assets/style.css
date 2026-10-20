@@ -123,3 +123,5 @@ button.villager:hover{background:transparent}.villager:hover .villager-name,.vil
 @keyframes vote-appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .reduce-effects *,.reduce-effects *::before,.reduce-effects *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 .reduce-effects .landscape{transform:none}
+.question-box{border-bottom:1px solid #64756e;padding-bottom:10px;margin-bottom:16px}.question-box select[multiple]{min-height:130px;font-size:13px}.citation-details{margin-top:12px;border-top:1px solid #64756e;padding-top:10px;color:#d5dfda;font-size:14px}.citation-details summary{cursor:pointer;color:#e7cea1}.citation-details p{font-size:14px!important;max-height:180px;overflow:auto}.citation-details small{color:#bcc9c6}
+.question-answer{margin-bottom:20px;border-color:#788b78}.question-answer h2{margin:10px 0;font-size:19px}.question-answer blockquote{margin:12px 0;padding:10px 16px;border-left:3px solid #c5ac7d;background:#ffffff06;white-space:pre-wrap}.question-answer>p{white-space:pre-wrap;line-height:1.9}

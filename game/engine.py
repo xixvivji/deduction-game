@@ -37,6 +37,7 @@ class Game:
         self.events, self.commands = [], {}
         self.council = {}
         self.last_protected = {}
+        self.pending_question = None
         self._emit("시작", {"day": self.day})
 
     def _emit(self, kind, data, recipient=None):
@@ -87,14 +88,35 @@ class Game:
             self.council[actor] = dict(payload)
             recipients = [q.id for q in self.players.values() if q.alive and q.role == "wolf"]
             self._emit("비밀 협의", {"actor": actor, **payload, "day": self.day}, recipients)
+        elif kind == "question" and self.phase == "discussion":
+            if set(payload) != {"text", "target", "evidence_ids"}:
+                raise RuleError("질문, 대상, 인용 기록이 필요합니다")
+            text, target, ids = payload["text"], payload["target"], payload["evidence_ids"]
+            if not isinstance(text, str) or not 1 <= len(text.strip()) <= 500:
+                raise RuleError("질문은 1~500자입니다")
+            if not isinstance(target, str) or target == actor or target not in self.living() or self.players[target].controller != "ai":
+                raise RuleError("생존한 다른 AI에게 질문하세요")
+            if self.pending_question or self.speeches.get(actor, 0) >= 2 or self.speeches.get(target, 0) >= 2:
+                raise RuleError("질문 또는 답변 차례가 남아 있지 않습니다")
+            public = {e["sequence"] for e in self.events if e["recipient"] is None}
+            if not isinstance(ids, list) or len(ids) > 3 or any(type(i) is not int or i not in public for i in ids) or len(ids) != len(set(ids)):
+                raise RuleError("공개 기록을 최대 3개 인용하세요")
+            self.speeches[actor] = self.speeches.get(actor, 0) + 1
+            self._emit("질문", {"actor": actor, "target": target, "text": text.strip(), "evidence_ids": ids, "day": self.day})
+            self.pending_question = dict(self.events[-1]["data"], sequence=self.events[-1]["sequence"])
         elif kind == "speak" and self.phase == "discussion":
             if set(payload) != {"text"} or not isinstance(payload["text"], str):
                 raise RuleError("발언 문자열이 필요합니다")
             text = payload["text"].strip()
             if not text or len(text) > 500 or self.speeches.get(actor, 0) >= 2:
                 raise RuleError("발언은 1~500자, 하루 최대 2회입니다")
+            question = self.pending_question
+            if question and question["target"] != actor:
+                raise RuleError("지목된 AI의 답변을 기다려 주세요")
             self.speeches[actor] = self.speeches.get(actor, 0) + 1
-            self._emit("발언", {"actor": actor, "text": text})
+            self._emit("답변" if question else "발언", {"actor": actor, "text": text, "day": self.day,
+                       **({"question_id": question["sequence"], "evidence_ids": []} if question else {})})
+            if question: self.pending_question = None
         elif kind == "vote" and self.phase == "vote":
             if set(payload) != {"target"}:
                 raise RuleError("target이 필요합니다")
@@ -153,6 +175,7 @@ class Game:
             self.phase = "discussion"
             self._check_winner()
         elif self.phase == "discussion":
+            if self.pending_question: raise RuleError("답변이 아직 완료되지 않았습니다")
             self.phase = "vote"
             self._emit("투표 시작", {"day": self.day})
         else:
@@ -201,6 +224,8 @@ class Game:
                   "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
                   "events": [e for e in self.events if e["recipient"] in (None, viewer) or (isinstance(e["recipient"], list) and viewer in e["recipient"]) or self.phase == "finished"]}
+        if self.pending_question and self.pending_question["target"] == viewer:
+            result["question"] = self.pending_question
         if self.players[viewer].role == "doctor":
             result["self"]["last_protected"] = self.last_protected.get(viewer)
         if self.players[viewer].role == "wolf":
@@ -227,6 +252,7 @@ class Game:
         random_state = data.pop("random_state")
         game.__dict__.update(data)
         game.last_protected = data.get("last_protected", {})
+        game.pending_question = data.get("pending_question")
         game.players = {k: Player(**v) for k, v in data["players"].items()}
         game.commands = {tuple(k): ((v[0][0], v[0][1]), v[1]) for k, v in data["commands"]}
         game.rng = random.Random()
