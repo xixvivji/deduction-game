@@ -41,8 +41,31 @@ async def run_blocking(function, *args, **kwargs):
     try:
         return await asyncio.shield(task)
     except asyncio.CancelledError:
-        try:
-            await task
-        except Exception:
-            pass
+        while not task.done():
+            try:
+                await asyncio.shield(task)
+            except asyncio.CancelledError:
+                continue  # A second cancellation must not cancel the worker wrapper.
+            except Exception:
+                break
+        if not task.cancelled():
+            task.exception()  # Retrieve any worker failure while preserving cancellation.
+        raise
+
+
+async def create_blocking_resource(factory):
+    """Close a newly-created resource if startup is cancelled before handoff."""
+    created = []
+    def build():
+        resource = factory()
+        created.append(resource)
+        return resource
+    try:
+        return await run_blocking(build)
+    except asyncio.CancelledError:
+        if created:
+            try:
+                await run_blocking(created[0].close)
+            except asyncio.CancelledError:
+                pass  # Cleanup has drained despite repeated cancellation.
         raise

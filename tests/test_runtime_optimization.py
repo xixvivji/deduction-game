@@ -2,6 +2,7 @@ import copy
 import json
 import queue
 import unittest
+import threading
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from game.runtime_cache import EventTokenCache, TOKEN_CACHE
@@ -103,5 +104,5 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(c.get('/health/ready').status_code,503)
 
     def test_mcp_queue_backpressure(self):
-        memory=object.__new__(MCPMemory);memory.closed=False;memory.jobs=queue.Queue(maxsize=1);memory.jobs.put('occupied')
+        memory=object.__new__(MCPMemory);memory.closed=False;memory.state_lock=threading.Lock();memory.jobs=queue.Queue(maxsize=1);memory.jobs.put('occupied')
         with self.assertRaises(MemoryUnavailable):memory.search(view())

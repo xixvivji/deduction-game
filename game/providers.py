@@ -136,10 +136,10 @@ class CloudClient:
         start = time.perf_counter()
         try:
             data = self.transport(url, body, headers, remaining(self.timeout))
-            remaining()
             if self.provider == "openai":
                 usage = data.get("usage") or {}
                 metric.update(input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"), total_tokens=usage.get("total_tokens"))
+                remaining()  # Usage can still be billable when the result arrived late.
                 if data.get("status") != "completed":
                     raise ValueError("OpenAI 응답이 완료되지 않았습니다")
                 parts = [p for item in data.get("output", []) if item.get("type") == "message" for p in item.get("content", [])]
@@ -150,6 +150,7 @@ class CloudClient:
                 usage = data.get("usageMetadata") or {}
                 metric.update(input_tokens=usage.get("promptTokenCount"), output_tokens=usage.get("candidatesTokenCount"), total_tokens=usage.get("totalTokenCount"))
                 metric["thinking_tokens"] = usage.get("thoughtsTokenCount")
+                remaining()
                 candidates = data.get("candidates", [])
                 if not candidates or candidates[0].get("finishReason") != "STOP":
                     raise ValueError("Gemini 응답이 차단되었거나 완료되지 않았습니다")
@@ -164,7 +165,7 @@ class CloudClient:
 
 
 class BudgetClient:
-    """한 게임의 재시도를 포함한 실제 생성 시도 횟수를 제한한다."""
+    """한 게임의 생성 시도 횟수(재시도·로컬 차단·실패 포함)를 제한한다."""
     def __init__(self, client: ModelClient, max_calls=200):
         if max_calls < 1:
             raise ValueError("호출 한도는 양수여야 합니다")
