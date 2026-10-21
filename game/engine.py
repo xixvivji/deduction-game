@@ -40,6 +40,8 @@ class Game:
         self.council = {}
         self.last_protected = {}
         self.pending_question = None
+        self.exploration_day = 0
+        self.exploration_locations = {}
         self._emit("시작", {"day": self.day})
 
     def _emit(self, kind, data, recipient=None):
@@ -67,6 +69,8 @@ class Game:
             if set(payload) != {"location", "target"}:
                 raise RuleError("location과 target이 필요합니다")
             location, target = payload["location"], payload["target"]
+            if self.exploration_day == self.day and location != self.exploration_locations.get(actor):
+                raise RuleError("밤 장소는 실제 탐색 종료 위치로 고정됩니다")
             if actor in self.actions or location not in self.LOCATIONS:
                 raise RuleError("중복 행동 또는 잘못된 장소입니다")
             if target is not None:
@@ -146,11 +150,11 @@ class Game:
             if not timeout and len(self.actions) != len(self.living()):
                 raise RuleError("밤 행동이 아직 완료되지 않았습니다")
             for pid in self.living():
-                self.actions.setdefault(pid, {"location": "광장", "target": None})
+                self.actions.setdefault(pid, {"location": self.exploration_locations.get(pid,"광장") if self.exploration_day==self.day else "광장", "target": None})
             private = []
             for pid, action in self.actions.items():
                 others = [q for q, a in self.actions.items() if q != pid and a["location"] == action["location"]]
-                if others:
+                if others and self.exploration_day != self.day:
                     private.append((pid, "목격", {"player": self.rng.choice(others), "location": action["location"], "day": self.day}))
                 if self.players[pid].role == "seer" and action["target"]:
                     target = action["target"]
@@ -233,6 +237,8 @@ class Game:
                   "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
                   "events": [e for e in self.events if e["recipient"] in (None, viewer) or (isinstance(e["recipient"], list) and viewer in e["recipient"]) or self.phase == "finished"]}
+        if self.exploration_day == self.day:
+            result["self"]["explored_location"] = self.exploration_locations.get(viewer)
         if self.pending_question and self.pending_question["target"] == viewer:
             result["question"] = self.pending_question
         if self.players[viewer].role == "doctor":
@@ -262,6 +268,8 @@ class Game:
         game.__dict__.update(data)
         game.last_protected = data.get("last_protected", {})
         game.pending_question = data.get("pending_question")
+        game.exploration_day = data.get("exploration_day", 0)
+        game.exploration_locations = data.get("exploration_locations", {})
         game.players = {k: Player(**v) for k, v in data["players"].items()}
         game.commands = {tuple(k): ((v[0][0], v[0][1]), v[1]) for k, v in data["commands"]}
         game.rng = random.Random()

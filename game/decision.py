@@ -59,7 +59,7 @@ def fallback(state):
     kind = state["kind"]
     payload = {"text": "판단을 보류하겠습니다."} if kind == "speak" else {"target": None}
     if kind == "council": payload["text"] = "공격을 보류합니다."
-    if kind == "night": payload["location"] = "광장"
+    if kind == "night": payload["location"] = state["selected"]["self"].get("explored_location", "광장")
     return {"payload": payload, "fallback": True, "audit": {"summary": "모델 응답 검증 실패로 기본 행동 적용", "evidence_ids": [], "evidence": [], "citation_access_valid": None, "semantic_support": "not_evaluated"}}
 
 

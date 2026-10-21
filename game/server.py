@@ -12,8 +12,9 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictInt, ConfigDict
 from .engine import Game, RuleError
+from . import exploration
 from .ai import action_spec
 from .decision import decide
 from .providers import create_client, ProviderError
@@ -45,7 +46,7 @@ class DemoClient:
         kind = action_spec(view)[0]
         if kind == "speak": return {"text": "[규칙 봇] 질문을 받았습니다. 실제 기억 기반 답변은 AI 모드에서 제공합니다." if view.get("question") else "[규칙 봇] 아직 판단할 근거가 부족합니다."}
         payload = {"target": None}
-        if kind == "night": payload["location"] = "광장"
+        if kind == "night": payload["location"] = view["self"].get("explored_location", "광장")
         if kind == "council":
             targets = schema["properties"]["target"]["enum"]
             payload.update(target=next((t for t in targets if t), None), text="이 대상을 함께 검토합시다.")
@@ -62,6 +63,10 @@ class Room:
         self.task = None
         self.client = None
         self.busy = False
+        self.intents = {}
+        self.move_sequences = {}
+        self.last_step = time.monotonic()
+        self.last_saved_step = 0.
 
 
 class Hub:
@@ -82,10 +87,10 @@ class Hub:
         self.db.execute("INSERT OR REPLACE INTO rooms VALUES (?, ?)", (room.data["id"], json.dumps(room.data, ensure_ascii=False)))
         self.db.commit()
 
-    def create(self, name, size):
+    def create(self, name, size, explore=False):
         if len(self.rooms) >= 100: raise RuleError("방 한도에 도달했습니다")
         rid, token = secrets.token_hex(4), secrets.token_urlsafe(32)
-        room = Room({"id":rid, "size":size, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
+        room = Room({"id":rid, "size":size, "explore_enabled":explore, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
         self.rooms[rid] = room
         self.save(room)
         return room, token
@@ -101,11 +106,15 @@ class Hub:
         raise HTTPException(401, "참가자 인증에 실패했습니다")
 
     def active(self, room):
+        if room.data.get("exploration", {}).get("active"): return None
         q = room.data["queue"]
         return q[room.data["index"]] if room.data["index"] < len(q) else None
 
     def queue(self, room):
         g = room.game
+        if g.phase == "night" and room.data.get("explore_enabled") and g.exploration_day != g.day:
+            room.data["exploration"] = exploration.begin(g)
+            room.intents.clear();room.move_sequences.clear();room.last_step=time.monotonic();room.last_saved_step=0.
         players = g.living()
         if g.phase == "council": players = [p for p in players if g.players[p].role == "wolf"]
         room.data.update(queue=players * (2 if g.phase == "discussion" else 1), index=0, deadline=time.time()+self.turn_seconds)
@@ -125,6 +134,10 @@ class Hub:
         view["action"] = {"kind":action_spec(view)[0],"schema":action_spec(view)[1]} if allowed else None
         view["question_targets"] = list(dict.fromkeys(p for p in room.data["queue"][room.data["index"]+1:]
             if g and g.phase == "discussion" and p != pid and g.players[p].controller == "ai" and g.players[p].alive and g.speeches.get(p, 0) < 2)) if allowed else []
+        view["explore_enabled"] = room.data.get("explore_enabled", False)
+        if g and room.data.get("exploration", {}).get("active"):
+            view.update(phase="explore", active=None, can_act=False, action=None, deadline=None, busy=False,
+                        exploration=exploration.observation(room.data["exploration"],g,pid))
         if g and g.phase == "finished":
             view["report"] = {"decisions":room.data["history"], "metrics":room.data["metrics"]}
         return view
@@ -141,7 +154,19 @@ class Hub:
                 source = getattr(room.client, "client", room.client)
                 room.data["backend"] = "demo" if isinstance(source, DemoClient) else getattr(source, "provider", "ollama")
                 room.data["model"] = getattr(source, "model", "규칙 봇")
+            room.last_step = time.monotonic()
             while room.data["status"] == "running":
+                if room.data.get("exploration", {}).get("active"):
+                    async with room.lock:
+                        now=time.monotonic();state=room.data["exploration"]
+                        done=exploration.tick(state,room.game,now-room.last_step,room.intents,now)
+                        room.last_step=now
+                        if done:
+                            exploration.finish(state,room.game);room.intents.clear();self.queue(room)
+                        if done or state["elapsed"]-room.last_saved_step>=1:
+                            self.save(room);room.last_saved_step=state["elapsed"]
+                    await asyncio.sleep(.05)
+                    continue
                 async with room.lock:
                     g = room.game
                     if g.phase == "finished":
@@ -158,7 +183,7 @@ class Hub:
                         if time.time() >= room.data["deadline"]:
                             kind, _ = action_spec(g.observation(actor))
                             payload = {"text":"시간 초과로 발언을 건너뜁니다."} if kind == "speak" else {"target":None}
-                            if kind == "night": payload["location"] = "광장"
+                            if kind == "night": payload["location"] = g.observation(actor)["self"].get("explored_location", "광장")
                             if kind == "council": payload["text"] = "시간 초과로 제안을 보류합니다."
                             g.submit(actor, str(uuid4()), g.version, kind, **payload)
                             room.data["index"] += 1
@@ -203,6 +228,15 @@ class Hub:
 class CreateBody(BaseModel):
     name: str = Field(min_length=1, max_length=20)
     size: int = Field(default=7, ge=5, le=11)
+    explore: bool = False
+
+
+class MoveBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dx: StrictInt = Field(ge=-1,le=1)
+    dy: StrictInt = Field(ge=-1,le=1)
+    day: StrictInt = Field(ge=1)
+    sequence: StrictInt = Field(ge=0)
 
 
 class JoinBody(BaseModel):
@@ -255,7 +289,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
     @app.post("/api/rooms")
     async def create(body:CreateBody, request:Request):
         if body.size not in Game.SIZES: raise RuleError("5·7·9·11인 중 선택하세요")
-        room, token = request.app.state.hub.create(body.name,body.size)
+        room, token = request.app.state.hub.create(body.name,body.size,body.explore)
         return {"room_id":room.data["id"],"token":token}
 
     @app.post("/api/rooms/{rid}/join")
@@ -290,9 +324,22 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
             if pid!="p0" or room.data["status"]!="paused": raise RuleError("방장만 일시 중단된 게임을 재개할 수 있습니다")
             room.data.update(status="running",error=None,deadline=time.time()+hub.turn_seconds)
             room.client=None
+            room.intents.clear();room.last_step=time.monotonic()
             hub.save(room)
             if auto_workers: hub.launch(room)
         return hub.view(room,pid)
+
+    @app.post("/api/rooms/{rid}/move")
+    async def move(rid:str,body:MoveBody,request:Request):
+        hub,room,pid=auth(request,rid)
+        async with room.lock:
+            state=room.data.get("exploration",{})
+            if room.data["status"]!="running" or not state.get("active") or state["day"]!=body.day or not room.game.players[pid].alive:
+                raise RuleError("지금은 이동할 수 없습니다")
+            if body.sequence>room.move_sequences.get(pid,-1):
+                room.move_sequences[pid]=body.sequence
+                room.intents[pid]=(body.dx,body.dy,time.monotonic())
+        return {"accepted":True}
 
     @app.post("/api/rooms/{rid}/commands")
     async def command(rid:str,body:CommandBody,request:Request):
@@ -329,7 +376,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
             hub=ws.app.state.hub;room=hub.room(rid);pid=hub.authenticate(room,str(data.get("token","")))
             while True:
                 await ws.send_json(hub.view(room,pid))
-                await asyncio.sleep(.5)
+                await asyncio.sleep(.1 if room.data.get("exploration",{}).get("active") else .5)
         except (WebSocketDisconnect, HTTPException, asyncio.TimeoutError, ValueError, RuntimeError, OSError):
             try: await ws.close(code=1008)
             except RuntimeError: pass
