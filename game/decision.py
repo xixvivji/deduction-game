@@ -8,7 +8,7 @@ from .memory_backend import LocalMemory, scoped
 from .evidence import claim_schema, verify, statement
 from langgraph.graph import StateGraph, END
 from .ai import action_spec, validate
-from . import discussion
+from . import discussion, beliefs
 from .providers import ProviderError
 
 
@@ -34,6 +34,9 @@ class DecisionState(TypedDict, total=False):
     quality_retries: int
     quality_history: list
     quality: dict
+    belief_memory: bool
+    previous_beliefs: dict
+    beliefs: dict
 
 
 @traceable(name="memory_selection",run_type="retriever")
@@ -41,6 +44,8 @@ def select(state):
     view = state["memory"].search(state["view"]) if state.get("memory_mode") == "retrieved" else scoped(state["view"])
     if state.get("discussion_quality") and view["phase"] == "discussion":
         discussion.attach_context(view,state["view"])
+    ledger=beliefs.update(state["view"],state.get("previous_beliefs")) if state.get("belief_memory") else {}
+    if ledger:beliefs.attach(view,ledger,state["view"])
     kind, schema = action_spec(view)
     schema = copy.deepcopy(schema)
     schema["properties"].update({
@@ -50,7 +55,7 @@ def select(state):
     schema["required"] += ["decision_summary", "evidence_ids"]
     if state.get("policy")=="verified":
         schema["properties"].update(claim_schema(view));schema["required"]+=list(claim_schema(view))
-    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"quality_history":[]}
+    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"quality_history":[],"beliefs":ledger}
 
 
 @traceable(name='model_decision',run_type='llm')
@@ -87,11 +92,13 @@ def generate(state):
 def validate_evidence(state):
     if state.get('policy')!='verified':return {'verification':{'ok':True,'status':'not_evaluated'}}
     result=verify(state['selected'],state['claim'],state['audit']['evidence_ids'],state['payload'])
+    if result['ok'] and state.get('belief_memory'):
+        result=beliefs.check(state['selected'],state['beliefs'],state['claim'],state['payload']) or result
     audit={**state['audit'],'claim':state['claim'],'semantic_support':result['status']}
     payload=dict(state['payload'])
     # Render checked facts from structured claims, never endorse unchecked free text as fact.
     if result['ok'] and 'text' in payload:
-        if result['status'] in ('supported_fact','grounded_suspicion'):payload['text']=statement(state['claim'])
+        if result['status'] in ('supported_fact','grounded_suspicion'):payload['text']=(beliefs.retraction(state['beliefs'],state['claim']) if state.get('belief_memory') else '')+statement(state['claim'])
         else:
             label='주장: ' if result['status']=='game_deception_allowed' else '의견: '
             text=re.sub(r'^(?:(?:의견|주장)\s*[:：]\s*)+', '', payload['text'].strip()).strip()
@@ -114,6 +121,7 @@ def research(state):
     selected=state['memory'].search(state['view'],query=query,expanded=True)
     if state.get('discussion_quality') and state['kind']=='speak':
         discussion.attach_context(selected,state['view'])
+    if state.get('belief_memory'):beliefs.attach(selected,state['beliefs'],state['view'])
     return {'selected':selected,'research_rounds':state['research_rounds']+1}
 
 
@@ -164,10 +172,12 @@ GRAPH = build_graph()
 
 
 @traceable(name='participant_decision',run_type='chain',process_inputs=lambda d:{'actor':d.get('view',{}).get('self',{}).get('id'),'phase':d.get('view',{}).get('phase'),'policy':d.get('policy','legacy')})
-def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True):
+def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True, previous_beliefs=None, belief_memory=False):
     result = GRAPH.invoke({"view": scoped(view), "client": client, "memory_mode": memory_mode,
-                           "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified"}, config={"recursion_limit": 20})
+                           "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified","previous_beliefs":previous_beliefs or {},"belief_memory":belief_memory and policy=="verified"}, config={"recursion_limit": 20})
     outcome={key: result[key] for key in ("kind", "payload", "attempts", "fallback", "audit")}
     outcome['audit'].update(policy=policy,research_rounds=result['research_rounds'],
                             verification_history=result['verification_history'],quality_retries=result['quality_retries'],quality_history=result['quality_history'],discussion_quality_enabled=discussion_quality and policy=='verified',memory_backend=(memory or LocalMemory()).name)
+    if result.get("belief_memory"):
+        outcome["audit"]["belief_memory"]=beliefs.record_suspicion(result["view"],result["beliefs"],outcome["audit"],outcome["fallback"])
     return outcome

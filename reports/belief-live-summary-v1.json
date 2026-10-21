@@ -1,0 +1,26 @@
+{
+  "room_id": "e55c6686",
+  "winner": "wolf",
+  "days": 5,
+  "seconds": 105.56,
+  "human_actions": 9,
+  "question_sent": true,
+  "ai_decisions": 60,
+  "model_calls": 62,
+  "fallbacks": 0,
+  "research_rounds": 1,
+  "input_tokens": 181695,
+  "output_tokens": 6618,
+  "failed_calls": 0,
+  "phases": {
+    "night": 17,
+    "discussion": 26,
+    "vote": 13,
+    "council": 4
+  },
+  "belief_snapshots": 60,
+  "saved_actor_ledgers": 4,
+  "belief_transitions": 0,
+  "quality_retries": 1,
+  "scope": "One 5-player turn-based actual OpenAI game, one automated human + four AI. Not realtime exploration, not a quality or win-rate benchmark."
+}

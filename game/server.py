@@ -206,13 +206,20 @@ class Hub:
                     await asyncio.sleep(.2)
                     continue
                 async with self.inference:
-                    outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"], self.memory, "verified", not isinstance(room.client, DemoClient))
+                    outcome = await asyncio.to_thread(
+                        decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
+                        discussion_quality=not isinstance(room.client, DemoClient),
+                        previous_beliefs=room.data.get("beliefs",{}).get(actor),
+                        belief_memory=not isinstance(room.client, DemoClient),
+                    )
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
                     if ai_view.get("question"):
                         # Only public citations are attached to the public answer, never private audit summaries.
                         g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
                     room.busy = False
+                    if "belief_memory" in outcome["audit"]:
+                        room.data.setdefault("beliefs",{})[actor]=outcome["audit"]["belief_memory"]
                     room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
                     room.data["metrics"].extend(room.client.metrics)
                     room.client.metrics.clear()
