@@ -115,6 +115,7 @@ def validate_evidence(state):
     if result['ok'] and state.get('belief_memory'):
         result=beliefs.check(state['selected'],state['beliefs'],state['claim'],state['payload']) or result
     audit={**state['audit'],'claim':state['claim'],'semantic_support':result['status']}
+    if result.get('opinion_guard') is not None:audit['opinion_guard']=result['opinion_guard']
     payload=dict(state['payload'])
     # Render checked facts from structured claims, never endorse unchecked free text as fact.
     if result['ok'] and 'text' in payload:

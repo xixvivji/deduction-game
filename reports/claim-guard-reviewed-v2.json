@@ -1,0 +1,598 @@
+{
+  "baseline_commit": "63fa502",
+  "heldout_sha256": "5185a56cccad0d3bdc55cf708822197c947c257eb146e14000a1d6d555466c86",
+  "original_report": "claim-guard-scope-v2.json",
+  "label_review": "../eval/claim_guard_label_review.json",
+  "generated_cases": 24,
+  "excluded": {
+    "self_tracker": "자기 역할 소개 뒤 어젯밤 여러 명을 확인했다는 추가 과거 행동을 생성했으나 입력에는 그 근거가 없다. 정상 자기소개만 시험하려던 사전 조건과 달라 제외한다.",
+    "mixed_condition": "독립된 두 문장을 요구했으나 하나의 if 조건문 안에 두 주장을 넣었다. 뒷부분이 독립 단정인지 조건의 결과인지 모호하므로 제외한다."
+  },
+  "scope": "22 reviewed cases from a 24-case sealed synthetic set. Two nonconforming/ambiguous generated inputs excluded after freeze; original results preserved. No tuning on heldout contents. Implementing-assistant review, not independent human labels. Fixed-output graph replay; no live game-model accuracy or token savings claim.",
+  "before": {
+    "fingerprints": {
+      "game/claim_guard.py": "d0fbdb0e4575e4300a8c706b56a20e090c9528226af4f76993d053568bd2a59e",
+      "game/evidence.py": "5a62dba9933b04f1161664df6407aff78da161cb3e412d18ce1ce7674a09bf06",
+      "game/decision.py": "062963600052db0ce83c2a31c795f9815c1f637dac18f4ca07f70fb18da23d72",
+      "game/ai.py": "b57121abc9384700c575dc081255050c9127419ca30fb8f8dbb92c15e3c43b96"
+    },
+    "rows": [
+      {
+        "case": "self_doctor",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0098,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "self_team",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.0089,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "conditional_attack",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.0088,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "conditional_role",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0097,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "question_attack",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0092,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "question_location",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0092,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "uncertain_role",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.009,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "uncertain_attack",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0093,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "faithful_quote",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.0088,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "plain_question",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0091,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "wolf_strategy",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "game_deception_allowed",
+        "correct": true,
+        "median_check_ms": 0.0082,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "wrong_self",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0097,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "other_role",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0089,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "other_innocence",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0089,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "colloquial_kill",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.009,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "attack_assertion",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0089,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "visit_assertion",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.009,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "false_quote",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0086,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "quote_endorsement",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0086,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "mixed_question",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0095,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "mixed_self",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0091,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "negative_attack_fact",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.009,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      }
+    ],
+    "summary": {
+      "cases": 22,
+      "correct": 10,
+      "allowed_cases": 11,
+      "unsupported_cases": 11,
+      "false_blocks": 3,
+      "missed_blocks": 9,
+      "false_block_rate": 0.2727272727272727,
+      "miss_rate": 0.8181818181818182,
+      "allowed_replay_retries": 3,
+      "unsupported_replay_retries": 2,
+      "allowed_fallbacks": 3,
+      "mean_case_median_check_ms": 0.0091
+    }
+  },
+  "after": {
+    "fingerprints": {
+      "game/claim_guard.py": "d1546521987b3cb857ef8a5e5ed475852b12880675951d3850879c9e577735af",
+      "game/evidence.py": "3dd54c0c33a0cff6669cc2d700e0c9597667bb5308f98c06343a013318923dbf",
+      "game/decision.py": "8f64422b90b6173c3930b580764cdc21c8dd9d4b47df41af2def7d39c5959be3",
+      "game/ai.py": "8f0c75d2f27d1a7e1cc297070e5ee3cfa450c34d1df4710253d8be4e9e7561d2"
+    },
+    "rows": [
+      {
+        "case": "self_doctor",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0145,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "self_team",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.0171,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "conditional_attack",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0143,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": [
+          "conditional"
+        ]
+      },
+      {
+        "case": "conditional_role",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0146,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": [
+          "conditional"
+        ]
+      },
+      {
+        "case": "question_attack",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0152,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": [
+          "question"
+        ]
+      },
+      {
+        "case": "question_location",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0144,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "uncertain_role",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.016,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "uncertain_attack",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0141,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": [
+          "uncertainty"
+        ]
+      },
+      {
+        "case": "faithful_quote",
+        "expected_allow": true,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": false,
+        "median_check_ms": 0.0156,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "plain_question",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "opinion",
+        "correct": true,
+        "median_check_ms": 0.0135,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "wolf_strategy",
+        "expected_allow": true,
+        "allowed": true,
+        "status": "game_deception_allowed",
+        "correct": true,
+        "median_check_ms": 0.0082,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": []
+      },
+      {
+        "case": "wrong_self",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0157,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "other_role",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.016,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "other_innocence",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0146,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "colloquial_kill",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0156,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "attack_assertion",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0138,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "visit_assertion",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.014,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "false_quote",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0187,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "quote_endorsement",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0185,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "mixed_question",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0167,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      },
+      {
+        "case": "mixed_self",
+        "expected_allow": false,
+        "allowed": true,
+        "status": "opinion",
+        "correct": false,
+        "median_check_ms": 0.0156,
+        "replay_attempts": 1,
+        "replay_retries": 0,
+        "replay_fallback": false,
+        "exemption_reasons": [
+          "known_self_role"
+        ]
+      },
+      {
+        "case": "negative_attack_fact",
+        "expected_allow": false,
+        "allowed": false,
+        "status": "untyped_fact",
+        "correct": true,
+        "median_check_ms": 0.0143,
+        "replay_attempts": 2,
+        "replay_retries": 1,
+        "replay_fallback": true,
+        "exemption_reasons": []
+      }
+    ],
+    "summary": {
+      "cases": 22,
+      "correct": 18,
+      "allowed_cases": 11,
+      "unsupported_cases": 11,
+      "false_blocks": 3,
+      "missed_blocks": 1,
+      "false_block_rate": 0.2727272727272727,
+      "miss_rate": 0.09090909090909091,
+      "allowed_replay_retries": 3,
+      "unsupported_replay_retries": 10,
+      "allowed_fallbacks": 3,
+      "mean_case_median_check_ms": 0.015
+    }
+  }
+}

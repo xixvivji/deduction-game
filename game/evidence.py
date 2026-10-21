@@ -1,6 +1,6 @@
 """Deterministic verifier for typed game facts, not an unrestricted prose truth detector."""
 from langsmith import traceable
-from .claim_guard import contains_untyped_fact
+from .claim_guard import inspect_opinion
 from .suspicion import DEFAULT_SUSPICION_POLICY, VILLAGE_ROLES
 
 CLAIMS = ['none','suspect_wolf','confirmed_wolf','confirmed_village','witnessed_attack','visited']
@@ -21,11 +21,12 @@ def verify(view, claim, ids, payload, suspicion_policy=DEFAULT_SUSPICION_POLICY)
     if kind=='none':
         ok=not subject and not value
         if view['phase']=='vote' and payload.get('target') and view['self']['role']!='wolf':ok=False
-        if ok and view['self']['role'] != 'wolf' and contains_untyped_fact(payload.get('text', '')):
-            return {'ok':False, 'status':'untyped_fact',
+        guard = inspect_opinion(view, payload.get('text',''), ids) if ok and view['self']['role']!='wolf' else None
+        if guard and not guard['ok']:
+            return {'ok':False, 'status':'untyped_fact','opinion_guard':guard,
                     'reason':'의견 안에 사실 단정이 있습니다. 해당 사실을 claim_type과 evidence_ids로 구조화하거나 근거 없는 단정을 빼고 확인 질문으로 고치세요.'}
         status = 'game_deception_allowed' if ok and view['self']['role'] == 'wolf' else 'opinion'
-        return {'ok':ok,'status':status if ok else 'insufficient','reason':'' if ok else '투표 대상을 뒷받침하는 관련 기록을 인용하거나 기권하세요.'}
+        return {'ok':ok,'status':status if ok else 'insufficient','opinion_guard':guard,'reason':'' if ok else '투표 대상을 뒷받침하는 관련 기록을 인용하거나 기권하세요.'}
     if not subject:return {'ok':False,'status':'insufficient','reason':'주장의 대상이 필요합니다.'}
     if view['self']['role']=='wolf':
         return {'ok':True,'status':'game_deception_allowed','reason':'늑대의 게임 내 주장은 사실로 인증하지 않습니다.'}
