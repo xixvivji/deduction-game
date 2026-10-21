@@ -56,6 +56,7 @@ class EngineTests(unittest.TestCase):
         self.g.advance(timeout=True)
         self.g.advance()
         self.g.advance(timeout=True)
+        self.g.advance(timeout=True)  # council -> night
         self.submit(self.wolf, "night", location="창고", target=self.citizen)
         self.g.advance(timeout=True)
         self.assertFalse(self.g.players[self.citizen].alive)
@@ -86,7 +87,8 @@ class EngineTests(unittest.TestCase):
         self.g.advance(timeout=True)
         while self.g.phase != "finished":
             self.g.advance()  # discussion -> vote
-            self.g.advance(timeout=True)  # abstain -> next night
+            self.g.advance(timeout=True)  # abstain -> council
+            self.g.advance(timeout=True)  # council -> night
             target = next(pid for pid in self.g.living() if pid != self.wolf)
             self.submit(self.wolf, "night", location="광장", target=target)
             self.g.advance(timeout=True)

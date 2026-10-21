@@ -1,0 +1,206 @@
+{
+  "scope": "합성 조사 결과 기반 투표 2개 상황. 추리 전반·역할 누설·승률 평가가 아님. 최초 모델 로딩 시간 포함.",
+  "dry_run": false,
+  "rows": [
+    {
+      "case": "known-wolf-11",
+      "provider": "ollama",
+      "model": "qwen3:4b-instruct",
+      "memory": "full",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 43,
+      "context_chars": 6196,
+      "seconds": 5.723,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p2",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 3295,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 5.719
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-11",
+      "provider": "ollama",
+      "model": "qwen3:4b-instruct",
+      "memory": "retrieved",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 12,
+      "context_chars": 2141,
+      "seconds": 1.148,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p2",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1300,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 1.147
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-42",
+      "provider": "ollama",
+      "model": "qwen3:4b-instruct",
+      "memory": "full",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 43,
+      "context_chars": 6196,
+      "seconds": 3.809,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p3",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 3295,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 3.807
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-42",
+      "provider": "ollama",
+      "model": "qwen3:4b-instruct",
+      "memory": "retrieved",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 12,
+      "context_chars": 2141,
+      "seconds": 1.242,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p3",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1300,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 1.24
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-11",
+      "provider": "ollama",
+      "model": "qwen3:8b",
+      "memory": "full",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 43,
+      "context_chars": 6196,
+      "seconds": 9.362,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p2",
+          "phase": "vote",
+          "model": "qwen3:8b",
+          "input_tokens": 3303,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 9.36
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-11",
+      "provider": "ollama",
+      "model": "qwen3:8b",
+      "memory": "retrieved",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 12,
+      "context_chars": 2141,
+      "seconds": 1.994,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p2",
+          "phase": "vote",
+          "model": "qwen3:8b",
+          "input_tokens": 1308,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 1.992
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-42",
+      "provider": "ollama",
+      "model": "qwen3:8b",
+      "memory": "full",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 43,
+      "context_chars": 6196,
+      "seconds": 6.392,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p3",
+          "phase": "vote",
+          "model": "qwen3:8b",
+          "input_tokens": 3303,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 6.39
+        }
+      ]
+    },
+    {
+      "case": "known-wolf-42",
+      "provider": "ollama",
+      "model": "qwen3:8b",
+      "memory": "retrieved",
+      "repeat": 0,
+      "original_events": 43,
+      "selected_events": 12,
+      "context_chars": 2141,
+      "seconds": 2.033,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "calls": [
+        {
+          "actor": "p3",
+          "phase": "vote",
+          "model": "qwen3:8b",
+          "input_tokens": 1308,
+          "output_tokens": 8,
+          "success": true,
+          "seconds": 2.031
+        }
+      ]
+    }
+  ]
+}

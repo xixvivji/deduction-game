@@ -26,6 +26,8 @@ class AITests(unittest.TestCase):
         self.g.advance()
         self.g.advance(timeout=True)
 
+        self.g.advance(timeout=True)  # council -> night
+
     def attack(self, targets):
         for actor, target in zip(self.wolves, targets):
             self.g.submit(actor, actor, self.g.version, 'night', location='광장', target=target)

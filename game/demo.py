@@ -8,7 +8,10 @@ def main():
     while game.phase != "finished":
         for pid in game.living():
             command += 1
-            if game.phase == "night":
+            if game.phase == "council":
+                if game.players[pid].role == "wolf":
+                    game.submit(pid, str(command), game.version, "council", text="공격 보류", target=None)
+            elif game.phase == "night":
                 game.submit(pid, str(command), game.version, "night", location="광장", target=None)
             elif game.phase == "discussion":
                 game.submit(pid, str(command), game.version, "speak", text="아직 확신할 증거가 없습니다.")
