@@ -37,7 +37,7 @@ class MCPMemory:
                 if job and not job[-1].done():job[-1].set_exception(MemoryUnavailable('MCP 연결이 종료되었습니다'))
 
     async def _serve(self):
-        params=StdioServerParameters(command=sys.executable,args=['-m','game.mcp_memory_server'],cwd=str(Path(__file__).resolve().parents[1]),env={'GAME_MEMORY_SECRET':self.secret})
+        params=StdioServerParameters(command=sys.executable,args=['-m','game.mcp_memory_server'],cwd=str(Path(__file__).resolve().parents[1]),env={'GAME_MEMORY_SECRET':self.secret, 'GAME_MEMORY_TOKEN_CACHE':os.environ.get('GAME_MEMORY_TOKEN_CACHE','false')})
         async with stdio_client(params) as (read,write):
             async with ClientSession(read,write,read_timeout_seconds=timedelta(seconds=10)) as session:
                 await session.initialize()

@@ -70,6 +70,8 @@ class Room:
         self.move_sequences = {}
         self.last_step = time.monotonic()
         self.last_saved_step = 0.
+        self.last_access = time.monotonic()
+        self.connections = 0
 
 
 class Hub:
@@ -77,7 +79,7 @@ class Hub:
         self.memory=memory or LocalMemory()
         self.db = sqlite3.connect(db_path)
         self.db.execute("CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
-        self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms")}
+        self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms WHERE json_extract(data, '$.status') != 'finished'")}
         self.client_factory = client_factory or self.default_client
         self.turn_seconds = turn_seconds
         self.inference = asyncio.Semaphore(1)
@@ -92,7 +94,8 @@ class Hub:
         self.db.commit()
 
     def create(self, name, size, explore=False, realtime=False):
-        if len(self.rooms) >= 100: raise RuleError("방 한도에 도달했습니다")
+        self.evict_finished()
+        if sum(r.data["status"] != "finished" for r in self.rooms.values()) >= 100: raise RuleError("방 한도에 도달했습니다")
         rid, token = secrets.token_hex(4), secrets.token_urlsafe(32)
         room = Room({"id":rid, "size":size, "explore_enabled":explore or realtime, "realtime":realtime, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
         self.rooms[rid] = room
@@ -100,8 +103,25 @@ class Hub:
         return room, token
 
     def room(self, rid):
-        if rid not in self.rooms: raise HTTPException(404, "방을 찾을 수 없습니다")
+        if rid not in self.rooms:
+            row = self.db.execute("SELECT data FROM rooms WHERE id=?", (rid,)).fetchone()
+            if row is None: raise HTTPException(404, "방을 찾을 수 없습니다")
+            self.rooms[rid] = Room(json.loads(row[0]))
+        self.rooms[rid].last_access = time.monotonic()
         return self.rooms[rid]
+
+    def evict_finished(self, idle_seconds=60):
+        now = time.monotonic()
+        removed = 0
+        for rid, room in list(self.rooms.items()):
+            if (room.data["status"] == "finished" and not room.connections
+                    and not room.busy and not room.lock.locked()
+                    and (room.task is None or room.task.done())
+                    and now - room.last_access >= idle_seconds):
+                self.save(room)
+                del self.rooms[rid]
+                removed += 1
+        return removed
 
     def authenticate(self, room, token):
         hashed = digest(token)
@@ -292,8 +312,17 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                     room.data["status"] = "paused"
                     room.data["error"] = "서버가 재시작되었습니다. 방장이 재개할 수 있습니다."
                     hub.save(room)
+            async def cleanup():
+                while True:
+                    await asyncio.sleep(30)
+                    hub.evict_finished()
+            cleanup_task = asyncio.create_task(cleanup())
             app.state.ready=True
-            yield
+            try:
+                yield
+            finally:
+                cleanup_task.cancel()
+                await asyncio.gather(cleanup_task, return_exceptions=True)
         finally:
             app.state.ready=False
             if hub is not None:
@@ -432,17 +461,24 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         if origin and origin.split("://",1)[-1]!=ws.headers.get("host"):
             await ws.close(code=1008);return
         await ws.accept()
+        connected_room = None
         try:
             data=await asyncio.wait_for(ws.receive_json(),timeout=5)
             if not isinstance(data, dict):
                 await ws.close(code=1008);return
             hub=ws.app.state.hub;room=hub.room(rid);pid=hub.authenticate(room,str(data.get("token","")))
+            room.connections += 1
+            connected_room = room
             while True:
                 await ws.send_json(hub.view(room,pid))
                 await asyncio.sleep(.1 if room.data.get("exploration",{}).get("active") else .5)
         except (WebSocketDisconnect, HTTPException, asyncio.TimeoutError, ValueError, RuntimeError, OSError):
             try: await ws.close(code=1008)
             except RuntimeError: pass
+        finally:
+            if connected_room is not None:
+                connected_room.connections -= 1
+                connected_room.last_access = time.monotonic()
     app.mount("/assets",StaticFiles(directory=ROOT/"frontend"/"assets"),name="assets")
     return app
 

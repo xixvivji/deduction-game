@@ -2,6 +2,7 @@
 import copy
 import json
 import math
+import os
 import re
 import time
 from .runtime_cache import TOKEN_CACHE
@@ -13,7 +14,9 @@ def terms(text):
     return words + [word[i:i+2] for word in words if len(word) > 2 for i in range(len(word)-1)]
 
 
-def retrieve(view, query=None, top_k=8, recent=6, use_cache=True):
+def retrieve(view, query=None, top_k=8, recent=6, use_cache=None):
+    if use_cache is None:
+        use_cache = os.environ.get("GAME_MEMORY_TOKEN_CACHE", "false").lower() == "true"
     started=time.perf_counter()
     result = copy.deepcopy(view)
     events = result["events"]

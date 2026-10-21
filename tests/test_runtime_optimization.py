@@ -40,7 +40,7 @@ class RuntimeTests(unittest.TestCase):
 
     def test_cache_does_not_change_retrieval(self):
         TOKEN_CACHE.clear();v=view();baseline=retrieve(v,use_cache=False)
-        retrieve(v);cached=retrieve(v)
+        retrieve(v,use_cache=True);cached=retrieve(v,use_cache=True)
         self.assertEqual(baseline['events'],cached['events'])
         self.assertEqual(cached['memory']['cache_hits'],len(v['events']))
 
