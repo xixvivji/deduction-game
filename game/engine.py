@@ -18,7 +18,7 @@ class Player:
 
 class Game:
     SIZES = (5, 7, 9, 11)
-    LOCATIONS = ("광장", "창고", "숲길")
+    LOCATIONS = ("광장", "창고", "숲길", "진료소", "시장", "종탑", "여관", "부두")
 
     def __init__(self, room_id, controllers, *, seed=None, max_days=8):
         if len(controllers) not in self.SIZES or any(c not in ("human", "ai") for c in controllers.values()):

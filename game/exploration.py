@@ -2,14 +2,27 @@
 import math
 from collections import deque
 
-WIDTH, HEIGHT, RADIUS, SIGHT, SPEED = 960, 600, 12, 180, 150
-BUILDINGS = [(160, 100, 160, 140), (600, 80, 160, 160), (400, 380, 160, 100)]
-PLACES = {'광장': (460, 300), '창고': (820, 180), '숲길': (140, 460)}
+WIDTH, HEIGHT, RADIUS, SIGHT, SPEED = 1600, 1000, 12, 115, 150
+MAP_VERSION = 2
+PLACES = {'광장': (460, 300), '창고': (820, 180), '숲길': (140, 460),
+          '진료소': (460, 820), '시장': (820, 820), '종탑': (1460, 180),
+          '여관': (1460, 500), '부두': (1460, 820)}
+# The same rectangles are sent to the renderer and used by authoritative movement.
+ROADS = [(100,260,1400,80),(100,140,80,740),(780,140,80,740),
+         (1420,140,80,740),(100,780,1400,80),(420,260,80,620),(780,140,720,80)]
+COURTS = [(x-60,y-60,120,120) for x,y in PLACES.values()] + [(350,230,220,140)]
+BUILDINGS = [(220,100,160,120),(900,80,180,140),(540,620,160,120),
+             (1100,580,200,140),(1240,380,120,160),(220,560,140,160)]
 
 
-def free(x, y, margin=RADIUS):
+def clear(x,y,margin=0):
     return margin <= x <= WIDTH-margin and margin <= y <= HEIGHT-margin and not any(
         a-margin < x < a+w+margin and b-margin < y < b+h+margin for a,b,w,h in BUILDINGS)
+
+
+def free(x,y,margin=RADIUS):
+    return clear(x,y,margin) and any(a+margin <= x <= a+w-margin and b+margin <= y <= b+h-margin
+                                    for a,b,w,h in ROADS+COURTS)
 
 
 def place(pos):
@@ -20,7 +33,7 @@ def sees(a, b):
     distance=math.dist(a,b)
     if distance > SIGHT: return False
     steps=max(1, math.ceil(distance/6))
-    return all(free(a[0]+(b[0]-a[0])*i/steps, a[1]+(b[1]-a[1])*i/steps, 0) for i in range(steps+1))
+    return all(clear(a[0]+(b[0]-a[0])*i/steps, a[1]+(b[1]-a[1])*i/steps, 0) for i in range(steps+1))
 
 
 def walk(pos, dx, dy, dt):
@@ -40,27 +53,47 @@ def route(start, goal):
     """Four-neighbour grid routing with collision-safe cell centres."""
     cell=lambda p:(int(p[0]//40),int(p[1]//40))
     point=lambda c:(c[0]*40+20,c[1]*40+20)
-    first,last=cell(start),cell(goal);parents={first:None};queue=deque([first])
+    def segment(a,b):
+        steps=max(1,math.ceil(math.dist(a,b)/5))
+        return all(free(a[0]+(b[0]-a[0])*i/steps,a[1]+(b[1]-a[1])*i/steps) for i in range(steps+1))
+    def anchor(pos):
+        c=cell(pos)
+        options=[(c[0]+dx,c[1]+dy) for dx in range(-2,3) for dy in range(-2,3)]
+        return next((n for n in sorted(options,key=lambda n:math.dist(pos,point(n))) if free(*point(n)) and segment(pos,point(n))),None)
+    first,last=anchor(start),anchor(goal)
+    if first is None or last is None:return []
+    parents={first:None};queue=deque([first])
     while queue:
         c=queue.popleft()
         if c==last:break
         for d in [(1,0),(-1,0),(0,1),(0,-1)]:
             n=(c[0]+d[0],c[1]+d[1])
-            if n not in parents and free(*point(n)):
+            if n not in parents and free(*point(n)) and segment(point(c),point(n)):
                 parents[n]=c;queue.append(n)
     if last not in parents:return []
-    path=[];c=last
-    while c!=first:path.append(list(point(c)));c=parents[c]
+    path=[list(goal)];c=last
+    while c is not None:path.append(list(point(c)));c=parents[c]
     return list(reversed(path))
 
 
 def begin(game, duration=30):
     positions={p:[380+(i%5)*40,260+(i//5)*40] for i,p in enumerate(game.living())}
     paths={p:route(pos,PLACES[game.rng.choice(list(PLACES))]) for p,pos in positions.items() if game.players[p].controller=='ai'}
-    return {'day':game.day,'duration':duration,'elapsed':0.,'positions':positions,'paths':paths,'seen':{},'active':True,'bodies':{},'cooldowns':{},'shields':list(set(t for doctor,t in game.last_protected.items() if doctor in game.living() and t in game.living())),'meeting':False,'moving':{}}
+    return {'map_version':MAP_VERSION,'day':game.day,'duration':duration,'elapsed':0.,'positions':positions,'paths':paths,'seen':{},'active':True,'bodies':{},'cooldowns':{},'shields':list(set(t for doctor,t in game.last_protected.items() if doctor in game.living() and t in game.living())),'meeting':False,'moving':{}}
+
+
+def migrate(state,game):
+    if state.get('map_version')==MAP_VERSION:return
+    for pid,pos in state['positions'].items():
+        if not free(*pos):
+            candidates=[[min(max(pos[0],x+RADIUS),x+w-RADIUS),min(max(pos[1],y+RADIUS),y+h-RADIUS)] for x,y,w,h in ROADS+COURTS]
+            state['positions'][pid]=min((p for p in candidates if free(*p)),key=lambda p:math.dist(pos,p))
+    state['paths']={pid:route(pos,PLACES[game.rng.choice(list(PLACES))]) for pid,pos in state['positions'].items() if game.players[pid].controller=='ai'}
+    state['map_version']=MAP_VERSION
 
 
 def tick(state, game, dt, intents, now):
+    migrate(state,game)
     dt=min(max(dt,0),.2,state['duration']-state['elapsed']);state['elapsed']+=dt
     for pid,pos in state['positions'].items():
         if not game.players[pid].alive:continue
@@ -104,7 +137,7 @@ def observation(state, game, viewer):
     alive=game.players[viewer].alive;me=state['positions'].get(viewer)
     return {'day':state['day'],'width':WIDTH,'height':HEIGHT,'sight':SIGHT,
             'remaining':max(0,round(state['duration']-state['elapsed'],1)),
-            'buildings':BUILDINGS,'places':[{'name':name,'x':p[0],'y':p[1]} for name,p in PLACES.items()],
+            'roads':ROADS,'courts':COURTS,'buildings':BUILDINGS,'places':[{'name':name,'x':p[0],'y':p[1]} for name,p in PLACES.items()],
             'realtime':game.realtime,
             'attack_wait': max(0,round(state.get('cooldowns',{}).get(viewer,8)-state['elapsed'],1)) if game.players[viewer].role=='wolf' else None,
             'attack_targets':[p for p in game.living() if game.players[p].role!='wolf' and nearby(state,viewer,p,ATTACK_RANGE)] if game.realtime and alive and game.players[viewer].role=='wolf' and game.day>1 else [],
