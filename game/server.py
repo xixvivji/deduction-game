@@ -21,6 +21,8 @@ from .memory_backend import LocalMemory
 from .mcp_memory import MCPMemory, MemoryUnavailable
 from .providers import create_client, ProviderError, PooledTransport
 from .inference_pool import InferencePool, run_blocking
+from .time_budget import run_with_budget
+from .circuit_breaker import CircuitTransport
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -88,7 +90,7 @@ class Hub:
 
     def default_client(self):
         if os.environ.get("GAME_PROVIDER") == "demo": return DemoClient()
-        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")), transport=self.transport)
+        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")), transport=self.transport, fast_model=os.environ.get("GAME_FAST_MODEL"), quality_model=os.environ.get("GAME_QUALITY_MODEL"))
 
     def save(self, room):
         room.data["game"] = room.game.snapshot() if room.game else None
@@ -231,7 +233,7 @@ class Hub:
                 async with self.inference.slot():
                     queue_wait=time.perf_counter()-queued
                     outcome = await run_blocking(
-                        decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
+                        run_with_budget, float(os.environ.get("GAME_DECISION_SECONDS", "120")), decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
                         discussion_quality=not isinstance(room.client, DemoClient),
                         previous_beliefs=room.data.get("beliefs",{}).get(actor),
                         belief_memory=not isinstance(room.client, DemoClient),
@@ -307,7 +309,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         if path != ":memory:": Path(path).parent.mkdir(parents=True,exist_ok=True)
         memory=await asyncio.to_thread(MCPMemory) if auto_workers else LocalMemory()
         hub = None
-        transport = PooledTransport()
+        transport = CircuitTransport(PooledTransport())
         try:
             hub = Hub(path,client_factory,turn_seconds,memory,transport)
             app.state.hub = hub

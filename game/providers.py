@@ -10,6 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from .ai import OllamaClient, prompt_messages, validate
+from .time_budget import remaining
 
 
 class ProviderError(RuntimeError):
@@ -134,7 +135,8 @@ class CloudClient:
                   "total_tokens": None, "success": False,"prompt_bytes":prompt_bytes}
         start = time.perf_counter()
         try:
-            data = self.transport(url, body, headers, self.timeout)
+            data = self.transport(url, body, headers, remaining(self.timeout))
+            remaining()
             if self.provider == "openai":
                 usage = data.get("usage") or {}
                 metric.update(input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"), total_tokens=usage.get("total_tokens"))
@@ -179,11 +181,32 @@ class BudgetClient:
         return self.client.generate(view, schema, feedback)
 
 
-def create_client(provider="ollama", model=None, *, base_url=None, max_calls=200, max_output_tokens=1024, transport=None):
+class RoutedClient:
+    """Explicit model routing within one provider; one budget wraps all routes."""
+    def __init__(self, default, fast=None, quality=None):
+        self.default=default;self.fast=fast or default;self.quality=quality or default
+        self.provider=default.provider;self.model=default.model;self.metrics=[]
+
+    def check(self):self.default.check()
+
+    def generate(self,view,schema,feedback=None):
+        route='quality' if feedback or view['phase'] in ('discussion','council') else 'fast'
+        client=self.quality if route=='quality' else self.fast
+        try:return client.generate(view,schema,feedback)
+        finally:
+            for metric in client.metrics:metric['model_route']=route
+            self.metrics.extend(client.metrics);client.metrics.clear()
+
+
+def create_client(provider="ollama", model=None, *, base_url=None, max_calls=200, max_output_tokens=1024, transport=None, fast_model=None, quality_model=None):
     if provider == "ollama":
         client = OllamaClient(model or "qwen3:4b-instruct", base_url or "http://127.0.0.1:11434")
     else:
         if base_url:
             raise ValueError("외부 API에는 --base-url을 지정할 수 없습니다")
         client = CloudClient(provider, model, max_output_tokens=max_output_tokens, transport=transport or post_json)
+    if provider != 'ollama' and (fast_model or quality_model):
+        def route_model(name):
+            return CloudClient(provider,name,max_output_tokens=max_output_tokens,transport=transport or post_json) if name else None
+        client=RoutedClient(client,route_model(fast_model),route_model(quality_model))
     return BudgetClient(client, max_calls)

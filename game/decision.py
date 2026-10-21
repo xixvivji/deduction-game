@@ -11,6 +11,7 @@ from langgraph.graph import StateGraph, END
 from .ai import action_spec, validate
 from . import discussion, beliefs
 from .providers import ProviderError, TransientProviderError
+from .time_budget import remaining
 
 
 class DecisionState(TypedDict, total=False):
@@ -44,6 +45,7 @@ class DecisionState(TypedDict, total=False):
 
 @traceable(name="memory_selection",run_type="retriever")
 def select(state):
+    remaining()
     view = state["memory"].search(state["view"]) if state.get("memory_mode") == "retrieved" else scoped(state["view"])
     if state.get("discussion_quality") and view["phase"] == "discussion":
         discussion.attach_context(view,state["view"])
@@ -70,11 +72,15 @@ def invoke_model(client,view,schema,feedback):
 
 
 def generate(state):
+    remaining()
     delay=state.get("retry_delay",0.)
-    if delay:time.sleep(delay)
+    if delay:
+        time.sleep(remaining(delay))
+        remaining()
     waited=state.get("retry_wait_seconds",0.)+delay
     try:
         payload = invoke_model(state["client"],state["selected"], state["schema"], state["error"] or None)["payload"]
+        remaining()
         validate(payload, state["schema"])
         ids = payload["evidence_ids"]
         visible = {e["sequence"]: e for e in state["selected"]["events"]}
@@ -123,6 +129,7 @@ def validate_evidence(state):
 
 @traceable(name='evidence_research',run_type='retriever')
 def research(state):
+    remaining()
     claim=state['claim']
     query=' '.join(str(claim.get(k) or '') for k in ('claim_subject','claim_type','claim_value'))+' 조사 공격 목격 방문 장소'
     selected=state['memory'].search(state['view'],query=query,expanded=True)

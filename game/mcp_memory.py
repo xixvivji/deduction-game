@@ -10,6 +10,7 @@ import sys
 import threading
 from datetime import timedelta
 from langsmith import traceable
+from .time_budget import remaining
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from .memory_backend import scoped, signature
@@ -73,10 +74,11 @@ class MCPMemory:
     @traceable(name='mcp_memory_search',run_type='retriever',process_inputs=lambda d:{'query':d.get('query'),'expanded':d.get('expanded',False),'actor':d.get('view',{}).get('self',{}).get('id')})
     def search(self,view,query=None,expanded=False):
         if self.closed:raise MemoryUnavailable('MCP 연결이 닫혔습니다')
+        timeout=remaining(35)
         future=Future()
         try:self.jobs.put_nowait((scoped(view),query,expanded,future))
         except queue.Full:raise MemoryUnavailable("MCP 검색 대기열이 가득 찼습니다. 잠시 후 재개하세요.") from None
-        try:return future.result(timeout=35)
+        try:return future.result(timeout=timeout)
         except TimeoutError:
             future.cancel();raise MemoryUnavailable('MCP 검색 시간 초과') from None
 
