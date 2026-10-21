@@ -205,13 +205,16 @@ class Hub:
                 if ai_view is None:
                     await asyncio.sleep(.2)
                     continue
+                queued=time.perf_counter()
                 async with self.inference:
+                    queue_wait=time.perf_counter()-queued
                     outcome = await asyncio.to_thread(
                         decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
                         discussion_quality=not isinstance(room.client, DemoClient),
                         previous_beliefs=room.data.get("beliefs",{}).get(actor),
                         belief_memory=not isinstance(room.client, DemoClient),
                     )
+                outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
                     if ai_view.get("question"):
@@ -219,7 +222,7 @@ class Hub:
                         g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
                     room.busy = False
                     if "belief_memory" in outcome["audit"]:
-                        room.data.setdefault("beliefs",{})[actor]=outcome["audit"]["belief_memory"]
+                        room.data.setdefault("beliefs",{})[actor]=outcome.get("belief_state",outcome["audit"]["belief_memory"])
                     room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
                     room.data["metrics"].extend(room.client.metrics)
                     room.client.metrics.clear()
@@ -289,8 +292,10 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                     room.data["status"] = "paused"
                     room.data["error"] = "서버가 재시작되었습니다. 방장이 재개할 수 있습니다."
                     hub.save(room)
+            app.state.ready=True
             yield
         finally:
+            app.state.ready=False
             if hub is not None:
                 tasks = [r.task for r in hub.rooms.values() if r.task and not r.task.done()]
                 for task in tasks: task.cancel()
@@ -310,6 +315,19 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         bearer = request.headers.get("authorization", "")
         pid = hub.authenticate(room,bearer.removeprefix("Bearer "))
         return hub,room,pid
+
+    @app.get("/health/live")
+    async def live():
+        return {"status":"alive"}
+
+    @app.get("/health/ready")
+    async def ready(request:Request):
+        hub=getattr(request.app.state,'hub',None)
+        if not getattr(request.app.state,'ready',False) or hub is None or getattr(hub.memory,'closed',False):
+            raise HTTPException(503,'not ready')
+        try:hub.db.execute('SELECT 1').fetchone()
+        except Exception:raise HTTPException(503,'not ready') from None
+        return {"status":"ready"}
 
     @app.get("/")
     async def index(): return FileResponse(ROOT/"frontend"/"index.html")

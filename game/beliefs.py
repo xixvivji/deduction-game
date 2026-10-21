@@ -1,5 +1,7 @@
 """Private, evidence-linked beliefs. Facts are derived by code; suspicions are model opinions."""
 import copy
+import hashlib
+import json
 from .memory_backend import scoped
 
 
@@ -14,22 +16,46 @@ def _facts(event):
     return None,None
 
 
-def update(view, previous=None):
+
+def _digest(events):
+    return hashlib.sha256(json.dumps(events,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
+
+
+def fact_index(events, previous, incremental=True):
+    checkpoint=previous.get('_checkpoint',{})
+    count=checkpoint.get('count',0)
+    valid=(incremental and checkpoint.get('schema')==1 and 0<=count<=len(events)
+           and checkpoint.get('prefix_digest')==_digest(events[:count]))
+    index=copy.deepcopy(checkpoint.get('facts',{})) if valid else {}
+    pending=events[count:] if valid else events
+    for event in pending:
+        target,status=_facts(event)
+        if target is not None and status:
+            index.setdefault(target,[]).append({'id':event['sequence'],'status':status})
+    return index,{'schema':1,'count':len(events),'prefix_digest':_digest(events),'facts':index},len(pending),bool(valid)
+
+
+def public_ledger(ledger):
+    return {k:copy.deepcopy(v) for k,v in ledger.items() if k!='_checkpoint'}
+
+
+def update(view, previous=None, incremental=True):
     view=scoped(view)
     owner=view['self']['id'];room=view.get('room_id')
     previous=previous or {}
     if previous.get('owner')!=owner or previous.get('room_id')!=room:
         previous={}
     events={e['sequence']:e for e in view['events']}
+    index,checkpoint,processed,reused=fact_index(view['events'],previous,incremental)
     entries={};changes=[]
     for player in view['players']:
         target=player['id']
         if target==owner:continue
         old=previous.get('entries',{}).get(target,{})
-        facts=[(e,_facts(e)[1]) for e in events.values() if _facts(e)[0]==target]
-        states={status for _,status in facts}
+        facts=index.get(target,[])
+        states={item['status'] for item in facts}
         state='conflicted' if len(states)>1 else next(iter(states)) if states else 'unknown'
-        ids=[e['sequence'] for e,_ in facts]
+        ids=[item['id'] for item in facts]
         if not facts and old.get('status')=='suspected':
             ids=[i for i in old.get('evidence_ids',[]) if i in events and target in [events[i]['data'].get(k) for k in ('actor','target','player')]]
             if ids:state='suspected'
@@ -45,7 +71,8 @@ def update(view, previous=None):
             changes.append({'target':target,'from':old.get('status','unknown'),'to':state,
                             'day':view['day'],'evidence_ids':sorted(set(ids)),'reason':reason})
     return {'owner':owner,'room_id':room,'entries':entries,'changes':changes,
-            'history':(copy.deepcopy(previous.get('history',[]))+changes)[-20:]}
+            'history':(copy.deepcopy(previous.get('history',[]))+changes)[-20:],
+            '_checkpoint':checkpoint,'update_stats':{'fact_events_processed':processed,'checkpoint_reused':reused}}
 
 
 def record_suspicion(view, ledger, audit, fallback):
@@ -67,7 +94,8 @@ def record_suspicion(view, ledger, audit, fallback):
 
 
 def attach(selected, ledger, original):
-    selected['belief_memory']=copy.deepcopy(ledger)
+    selected['belief_memory']=public_ledger(ledger)
+    selected['belief_memory'].pop('update_stats',None)
     ids={i for item in ledger['entries'].values() for i in item['evidence_ids']}
     events={e['sequence']:e for e in selected['events']}
     for e in scoped(original)['events']:

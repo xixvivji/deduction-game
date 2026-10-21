@@ -21,7 +21,7 @@ class MemoryUnavailable(RuntimeError):pass
 class MCPMemory:
     name='mcp'
     def __init__(self):
-        self.secret=secrets.token_urlsafe(32);self.jobs=queue.Queue();self.ready=Future();self.closed=False
+        self.secret=secrets.token_urlsafe(32);self.jobs=queue.Queue(maxsize=16);self.ready=Future();self.closed=False
         self.thread=threading.Thread(target=self._run,daemon=True,name='game-mcp-memory');self.thread.start()
         try:self.ready.result(timeout=20)
         except Exception:
@@ -55,6 +55,7 @@ class MCPMemory:
                     job=await asyncio.to_thread(self.jobs.get)
                     if job is None:return
                     view,query,expanded,future=job
+                    if future.cancelled():continue
                     token=None
                     try:
                         registered=await call('register_context',{'view':view,'proof':signature(view,self.secret)})
@@ -72,11 +73,20 @@ class MCPMemory:
     @traceable(name='mcp_memory_search',run_type='retriever',process_inputs=lambda d:{'query':d.get('query'),'expanded':d.get('expanded',False),'actor':d.get('view',{}).get('self',{}).get('id')})
     def search(self,view,query=None,expanded=False):
         if self.closed:raise MemoryUnavailable('MCP 연결이 닫혔습니다')
-        future=Future();self.jobs.put((scoped(view),query,expanded,future))
+        future=Future()
+        try:self.jobs.put_nowait((scoped(view),query,expanded,future))
+        except queue.Full:raise MemoryUnavailable("MCP 검색 대기열이 가득 찼습니다. 잠시 후 재개하세요.") from None
         try:return future.result(timeout=35)
         except TimeoutError:
             future.cancel();raise MemoryUnavailable('MCP 검색 시간 초과') from None
 
     def close(self):
-        if not self.closed:self.closed=True;self.jobs.put(None)
+        if not self.closed:
+            self.closed=True
+            while True:
+                try:
+                    job=self.jobs.get_nowait()
+                    if job and not job[-1].done():job[-1].set_exception(MemoryUnavailable('MCP 종료로 검색을 취소했습니다'))
+                except queue.Empty:break
+            self.jobs.put_nowait(None)
         if threading.current_thread()!=self.thread:self.thread.join(timeout=15)

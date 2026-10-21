@@ -3,6 +3,8 @@ import copy
 import json
 import os
 import time
+from email.utils import parsedate_to_datetime
+from datetime import datetime, timezone
 from typing import Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
@@ -12,6 +14,20 @@ from .ai import OllamaClient, prompt_messages, validate
 
 class ProviderError(RuntimeError):
     """설정/권한 오류: 같은 설정으로 재시도하지 않고 게임을 중단한다."""
+
+
+class TransientProviderError(ValueError):
+    def __init__(self,message,retry_after=None):
+        super().__init__(message);self.retry_after=retry_after
+
+
+def retry_after_seconds(value):
+    if not value:return None
+    try:
+        try:seconds=float(value)
+        except ValueError:seconds=(parsedate_to_datetime(value)-datetime.now(timezone.utc)).total_seconds()
+        return max(0.,min(seconds,30.))
+    except (ValueError,TypeError,OverflowError):return None
 
 
 class CallLimitExceeded(ProviderError):
@@ -38,12 +54,14 @@ def post_json(url, body, headers, timeout):
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)
     except HTTPError as error:
-        # 원본 오류 본문/헤더에는 민감한 정보가 있을 수 있으므로 출력하지 않는다.
-        if error.code in (400, 401, 403, 404):
+        try:
+            if error.code in (408,429) or 500<=error.code<600:
+                raise TransientProviderError(f"API HTTP {error.code}: 일시적인 요청 실패",retry_after_seconds(error.headers.get('Retry-After') if error.headers else None)) from None
             raise ProviderError(f"API HTTP {error.code}: 키·모델·요청 설정을 확인하세요") from None
-        raise ValueError(f"API HTTP {error.code}: 일시적인 요청 실패") from None
+        finally:error.close()
     except (URLError, TimeoutError, OSError):
-        raise ValueError("API 연결 실패 또는 시간 초과") from None
+        raise TransientProviderError("API 연결 실패 또는 시간 초과") from None
+
 
 
 class CloudClient:
@@ -64,6 +82,11 @@ class CloudClient:
     def generate(self, view, schema, feedback=None):
         self.check()
         messages = prompt_messages(view, feedback)
+        prompt_bytes=len(json.dumps(messages,ensure_ascii=False).encode())
+        try:limit=int(os.environ.get('GAME_MAX_PROMPT_BYTES','262144'))
+        except ValueError:raise ProviderError('GAME_MAX_PROMPT_BYTES는 양의 정수여야 합니다') from None
+        if limit<1:raise ProviderError('GAME_MAX_PROMPT_BYTES는 양의 정수여야 합니다')
+        if prompt_bytes>limit:raise ProviderError('모델 입력 크기 제한을 초과했습니다. 기록 크기와 GAME_MAX_PROMPT_BYTES를 확인하세요')
         schema = wire_schema(schema)
         if self.provider == "openai":
             url = "https://api.openai.com/v1/responses"
@@ -80,7 +103,7 @@ class CloudClient:
                         "responseFormat": {"text": {"mimeType": "APPLICATION_JSON", "schema": schema}}}}
         metric = {"provider": self.provider, "model": self.model, "actor": view["self"]["id"],
                   "phase": view["phase"], "input_tokens": None, "output_tokens": None,
-                  "total_tokens": None, "success": False}
+                  "total_tokens": None, "success": False,"prompt_bytes":prompt_bytes}
         start = time.perf_counter()
         try:
             data = self.transport(url, body, headers, self.timeout)

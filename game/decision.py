@@ -2,6 +2,7 @@
 import time
 import copy
 import re
+import random
 from typing import TypedDict
 from langsmith import traceable
 from .memory_backend import LocalMemory, scoped
@@ -9,7 +10,7 @@ from .evidence import claim_schema, verify, statement
 from langgraph.graph import StateGraph, END
 from .ai import action_spec, validate
 from . import discussion, beliefs
-from .providers import ProviderError
+from .providers import ProviderError, TransientProviderError
 
 
 class DecisionState(TypedDict, total=False):
@@ -37,6 +38,8 @@ class DecisionState(TypedDict, total=False):
     belief_memory: bool
     previous_beliefs: dict
     beliefs: dict
+    retry_delay: float
+    retry_wait_seconds: float
 
 
 @traceable(name="memory_selection",run_type="retriever")
@@ -55,7 +58,7 @@ def select(state):
     schema["required"] += ["decision_summary", "evidence_ids"]
     if state.get("policy")=="verified":
         schema["properties"].update(claim_schema(view));schema["required"]+=list(claim_schema(view))
-    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"quality_history":[],"beliefs":ledger}
+    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"quality_history":[],"beliefs":ledger,"retry_delay":0.,"retry_wait_seconds":0.}
 
 
 @traceable(name='model_decision',run_type='llm')
@@ -67,8 +70,9 @@ def invoke_model(client,view,schema,feedback):
 
 
 def generate(state):
-    if state["attempts"]:
-        time.sleep(1)
+    delay=state.get("retry_delay",0.)
+    if delay:time.sleep(delay)
+    waited=state.get("retry_wait_seconds",0.)+delay
     try:
         payload = invoke_model(state["client"],state["selected"], state["schema"], state["error"] or None)["payload"]
         validate(payload, state["schema"])
@@ -81,11 +85,14 @@ def generate(state):
                  "evidence": [copy.deepcopy(visible[i]) for i in ids],
                  "available_event_ids": list(visible), "citation_access_valid": True,
                  "semantic_support": "not_evaluated"}
-        return {"payload": payload, "claim":claim, "audit": audit, "attempts": state["attempts"]+1, "error": ""}
+        return {"payload": payload, "claim":claim, "audit": audit, "attempts": state["attempts"]+1, "error": "", "retry_delay":0.,"retry_wait_seconds":waited}
+    except TransientProviderError as error:
+        delay=error.retry_after if error.retry_after is not None else min(8.,.5*2**state["attempts"])+random.uniform(0,.25)
+        return {"error":"모델 API의 일시 오류로 재시도합니다.","attempts":state["attempts"]+1,"retry_delay":delay,"retry_wait_seconds":waited}
     except ProviderError:
         raise
     except (ValueError, TypeError, KeyError, OSError):
-        return {"error": "응답 형식 또는 연결 오류. 지정된 스키마를 따르세요.", "attempts": state["attempts"]+1}
+        return {"error": "응답 형식 또는 연결 오류. 지정된 스키마를 따르세요.", "attempts": state["attempts"]+1,"retry_delay":0.,"retry_wait_seconds":waited}
 
 
 @traceable(name='validate_evidence',run_type='chain')
@@ -173,11 +180,14 @@ GRAPH = build_graph()
 
 @traceable(name='participant_decision',run_type='chain',process_inputs=lambda d:{'actor':d.get('view',{}).get('self',{}).get('id'),'phase':d.get('view',{}).get('phase'),'policy':d.get('policy','legacy')})
 def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True, previous_beliefs=None, belief_memory=False):
+    started=time.perf_counter()
     result = GRAPH.invoke({"view": scoped(view), "client": client, "memory_mode": memory_mode,
                            "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified","previous_beliefs":previous_beliefs or {},"belief_memory":belief_memory and policy=="verified"}, config={"recursion_limit": 20})
     outcome={key: result[key] for key in ("kind", "payload", "attempts", "fallback", "audit")}
-    outcome['audit'].update(policy=policy,research_rounds=result['research_rounds'],
+    outcome['audit'].update(retry_wait_seconds=result['retry_wait_seconds'],policy=policy,research_rounds=result['research_rounds'],
                             verification_history=result['verification_history'],quality_retries=result['quality_retries'],quality_history=result['quality_history'],discussion_quality_enabled=discussion_quality and policy=='verified',memory_backend=(memory or LocalMemory()).name)
     if result.get("belief_memory"):
-        outcome["audit"]["belief_memory"]=beliefs.record_suspicion(result["view"],result["beliefs"],outcome["audit"],outcome["fallback"])
+        outcome["belief_state"]=beliefs.record_suspicion(result["view"],result["beliefs"],outcome["audit"],outcome["fallback"])
+        outcome["audit"]["belief_memory"]=beliefs.public_ledger(outcome["belief_state"])
+    outcome["audit"]["runtime"]={"decision_seconds":time.perf_counter()-started,"visible_events":len(result["view"]["events"]),"selected_events":len(result["selected"]["events"]),"search":result["selected"].get("memory",{}),"belief_update":result.get("beliefs",{}).get("update_stats",{})}
     return outcome

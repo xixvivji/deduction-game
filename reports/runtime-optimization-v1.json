@@ -1,0 +1,52 @@
+{
+  "scope": "Offline synthetic workload, 25 incremental snapshots in separate fresh processes. No API calls, no token/billing or generated-answer-quality measurement. Timings include tracemalloc overhead. Python tracked peak is measured allocations during loop; RSS is whole process high-water mark including imports. Cache byte count is an estimate, not a process RAM cap.",
+  "semantic_outputs_equal": true,
+  "results": {
+    "before": {
+      "rounds": 25,
+      "mean_ms": 12.572,
+      "first_ms": 17.989,
+      "warm_mean_ms": 12.346,
+      "python_tracked_peak_bytes": 858240,
+      "process_peak_rss_bytes": 64946176,
+      "fact_events_processed": 4875,
+      "prompt_utf8_bytes_total": 265316,
+      "cache_hits": 0,
+      "cache_misses": 4875,
+      "cache": {
+        "entries": 0,
+        "estimated_bytes": 0,
+        "hits": 0,
+        "misses": 0,
+        "evictions": 0,
+        "max_entries": 1024,
+        "max_estimated_bytes": 2097152,
+        "ttl_seconds": 300
+      },
+      "semantic_digest": "f549404ca402c9a746bdd977786e849020422447ff51a02b11502fe86a1d0cec"
+    },
+    "after": {
+      "rounds": 25,
+      "mean_ms": 13.216,
+      "first_ms": 29.525,
+      "warm_mean_ms": 12.536,
+      "python_tracked_peak_bytes": 1528360,
+      "process_peak_rss_bytes": 66535424,
+      "fact_events_processed": 207,
+      "prompt_utf8_bytes_total": 238542,
+      "cache_hits": 4668,
+      "cache_misses": 207,
+      "cache": {
+        "entries": 207,
+        "estimated_bytes": 1316389,
+        "hits": 4668,
+        "misses": 207,
+        "evictions": 0,
+        "max_entries": 1024,
+        "max_estimated_bytes": 2097152,
+        "ttl_seconds": 300
+      },
+      "semantic_digest": "f549404ca402c9a746bdd977786e849020422447ff51a02b11502fe86a1d0cec"
+    }
+  }
+}
