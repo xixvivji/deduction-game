@@ -1,0 +1,2806 @@
+{
+  "created_at": "2026-10-21T01:35:42.388641+00:00",
+  "model": "qwen3:4b-instruct",
+  "fixture_version": 1,
+  "scope": "8 synthetic vote situations, repeated paired comparison. No independent holdout, no win-rate/general-reasoning claim. Combined intervention, not retrieval-only ablation. Warm-up excluded; cache effects may remain. Evidence recall measures selected context including pinned facts, not vector Recall@k. Scope violations measure retrieved IDs, not all prose leakage.",
+  "mcp_startup_seconds": 0.29811208392493427,
+  "rows": [
+    {
+      "case": "investigation",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 5.2022,
+      "expected_target": "p1",
+      "selected_target": "p1",
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2857,
+      "output_tokens": 108,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화를 통해 정보를 공유했고, 조사 결과는 p1이 늑대라는 것이 확인되었으나, 그 사실이 공개되지 않았습니다. 시민 진영은 조사 결과를 기반으로 투표를 진행해야 하며, p1이 늑대임이 확인되었으므로 그를 우선적으로 제거해야 합니다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2857,
+          "output_tokens": 108,
+          "success": true,
+          "seconds": 5.199
+        }
+      ]
+    },
+    {
+      "case": "investigation",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 5.1039,
+      "expected_target": "p1",
+      "selected_target": "p1",
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1752,
+      "output_tokens": 164,
+      "selected_events": 11,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1이 조사 대상이었고, 그 조사 결과는 시민이 확인한 사실이지만, 그 결과가 공개되지 않았습니다. 다른 참가자들의 일상 대화에서 모두 '아직 확실한 정보가 없습니다'라고 말했으며, 이는 정보 부족을 나타냅니다. 조사 결과가 공개되지 않았다는 점에서, p1이 늑대일 가능성이 있지만, 직접적인 증거는 없습니다. 따라서 p1을 의심하지만, 확정은 하지 않습니다",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          3,
+          18,
+          19,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1752,
+          "output_tokens": 164,
+          "success": true,
+          "seconds": 5.099
+        }
+      ]
+    },
+    {
+      "case": "attack",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 5.3727,
+      "expected_target": "p2",
+      "selected_target": null,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1709,
+      "output_tokens": 168,
+      "selected_events": 10,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p2가 광장에서 p6를 공격한 것을 목격했고, 이는 공격 목격 기록에 기반한다. 그러나 그 공격이 늑대의 행동인지, 아니면 시민의 정당한 행동인지 판단할 수 없다. p6가 공격을 받았다는 사실은 존재하지만, 그가 늑대인지 여부는 다른 증거 없이 추측할 수 없다. 따라서 p6를 의심하는 주장을 제시하지만, 근거가 부족하다고 판단하여 기권한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "공격 목격",
+            "data": {
+              "actor": "p2",
+              "target": "p6",
+              "location": "광장",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          15,
+          19,
+          22,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p6",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1709,
+          "output_tokens": 168,
+          "success": true,
+          "seconds": 5.368
+        }
+      ]
+    },
+    {
+      "case": "attack",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 5.2128,
+      "expected_target": "p2",
+      "selected_target": "p6",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2867,
+      "output_tokens": 106,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "공격 목격은 p2가 p6을 광장에서 목격했으며, 이는 p6이 늑대일 가능성을 높인다. 하지만 다른 참가자의 발언에는 불확실한 정보만 포함되어 있어, p6이 늑대임을 확정할 수 없다. 따라서 투표에서 p6을 우선적으로 제안한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "공격 목격",
+            "data": {
+              "actor": "p2",
+              "target": "p6",
+              "location": "광장",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2867,
+          "output_tokens": 106,
+          "success": true,
+          "seconds": 5.209
+        }
+      ]
+    },
+    {
+      "case": "rumor",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 4.6173,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2875,
+      "output_tokens": 78,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p6가 늑대일 가능성이 제기되었으나, 어떠한 증거도 없으며 모든 참가자가 '확실한 정보 없음'을 언급한 상태에서, 시민은 근거 없는 투표를 피하고 기권한다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2875,
+          "output_tokens": 78,
+          "success": true,
+          "seconds": 4.614
+        }
+      ]
+    },
+    {
+      "case": "rumor",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 15.4605,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 3,
+      "fallback": true,
+      "research_rounds": 2,
+      "input_tokens": 5868,
+      "output_tokens": 436,
+      "selected_events": 10,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모델 응답 검증 실패로 기본 행동 적용",
+        "evidence_ids": [],
+        "evidence": [],
+        "citation_access_valid": null,
+        "semantic_support": "abstained",
+        "policy": "verified",
+        "research_rounds": 2,
+        "verification_history": [
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1714,
+          "output_tokens": 146,
+          "success": true,
+          "seconds": 4.605
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2077,
+          "output_tokens": 117,
+          "success": true,
+          "seconds": 4.333
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2077,
+          "output_tokens": 173,
+          "success": true,
+          "seconds": 4.5
+        }
+      ]
+    },
+    {
+      "case": "location",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 4.4723,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1763,
+      "output_tokens": 131,
+      "selected_events": 11,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p4가 창고를 탐색한 것으로 확인되었으나, 그 외의 정보는 없으며, 다른 참가자들의 발언에서 모두 '확실한 정보 없음'을 반복하고 있어 공격 또는 진영에 대한 근거가 부족함. 시민은 기권하며 투표를 하지 않음.",
+        "evidence_ids": [
+          27,
+          30,
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 27,
+            "type": "발언",
+            "data": {
+              "actor": "p4",
+              "text": "일상 대화 25: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 30,
+            "type": "발언",
+            "data": {
+              "actor": "p0",
+              "text": "일상 대화 28: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 34,
+            "type": "탐색 목격",
+            "data": {
+              "player": "p4",
+              "location": "창고",
+              "day": 1,
+              "second": 20
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          20,
+          22,
+          25,
+          26,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p4",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1763,
+          "output_tokens": 131,
+          "success": true,
+          "seconds": 4.467
+        }
+      ]
+    },
+    {
+      "case": "location",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 5.5948,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2866,
+      "output_tokens": 123,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화를 통해 정보를 공유했으나, 특정 장소의 목격은 p4가 창고에서 이루어졌으며, 이는 시민 진영이 추적자나 조사자 역할을 가진 자의 행동을 반영할 수 있는 근거가 되지 않는다. 현재까지의 정보는 불충분하며, 늑대의 존재를 확인하지 못했으므로 투표는 기권한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "탐색 목격",
+            "data": {
+              "player": "p4",
+              "location": "창고",
+              "day": 1,
+              "second": 20
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2866,
+          "output_tokens": 123,
+          "success": true,
+          "seconds": 5.593
+        }
+      ]
+    },
+    {
+      "case": "private_other",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 4.5106,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2814,
+      "output_tokens": 74,
+      "selected_events": 33,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화에서 '확실한 정보가 없습니다'라고 말했고, 어떠한 목격이나 조사 결과도 없어 늑대의 존재를 추정할 수 없습니다. 따라서 투표는 기권합니다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2814,
+          "output_tokens": 74,
+          "success": true,
+          "seconds": 4.509
+        }
+      ]
+    },
+    {
+      "case": "private_other",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 5.5607,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1763,
+      "output_tokens": 178,
+      "selected_events": 11,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p3이 일상 대화에서 반복적으로 '아직 확실한 정보가 없습니다'라고 말했으며, 이는 정보를 공유하지 않거나 조사 결과를 숨기는 행동을 나타낼 수 있다. 다른 참가자들도 동일한 발언을 반복했으나, p3의 발언이 조사자로서의 역할을 수행하지 않음을 시사한다. 이는 늑대가 조사자로 숨어 있을 가능성을 높인다. 하지만 직접적인 증거가 없으므로 기만 가능성은 인정되",
+        "evidence_ids": [
+          25,
+          26,
+          28
+        ],
+        "evidence": [
+          {
+            "sequence": 25,
+            "type": "발언",
+            "data": {
+              "actor": "p2",
+              "text": "일상 대화 23: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 26,
+            "type": "발언",
+            "data": {
+              "actor": "p3",
+              "text": "일상 대화 24: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 28,
+            "type": "발언",
+            "data": {
+              "actor": "p5",
+              "text": "일상 대화 26: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          19,
+          24,
+          25,
+          26,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p3",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1763,
+          "output_tokens": 178,
+          "success": true,
+          "seconds": 5.555
+        }
+      ]
+    },
+    {
+      "case": "contradiction",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 4.5522,
+      "expected_target": "p1",
+      "selected_target": "p1",
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1756,
+      "output_tokens": 129,
+      "selected_events": 11,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1이 'p6가 늑대다'라고 주장하지만, 그 근거가 없고, 조사 결과도 p1에 대한 조사가 없으므로 신뢰할 수 없습니다. p1의 발언은 일반적인 일상 대화로, 진영에 대한 명확한 주장이 아님. 기권합니다.",
+        "evidence_ids": [
+          34,
+          31,
+          30
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          },
+          {
+            "sequence": 31,
+            "type": "발언",
+            "data": {
+              "actor": "p1",
+              "text": "일상 대화 29: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 30,
+            "type": "발언",
+            "data": {
+              "actor": "p0",
+              "text": "일상 대화 28: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          4,
+          22,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1756,
+          "output_tokens": 129,
+          "success": true,
+          "seconds": 4.548
+        }
+      ]
+    },
+    {
+      "case": "contradiction",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 6.2882,
+      "expected_target": "p1",
+      "selected_target": null,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2919,
+      "output_tokens": 139,
+      "selected_events": 35,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1의 발언에서 'p6가 늑대라고 생각합니다'라는 내용을 기반으로, p6가 늑대일 가능성을 고려하지만, 조사 결과는 p1이 늑대라는 기록이 없으며, 조사자인 p0이 p1을 조사한 것은 시민이 조사한 경우이므로 p1은 시민임을 확인할 수 있음. 현재 정보로는 p6가 늑대일 가능성은 있지만, 증거가 부족하여 투표는 기권함.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2919,
+          "output_tokens": 139,
+          "success": true,
+          "seconds": 6.285
+        }
+      ]
+    },
+    {
+      "case": "village",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 5.4672,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2918,
+      "output_tokens": 96,
+      "selected_events": 35,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p2가 시민임을 확인했고, p6를 늑대로 지적했으나 그 근거는 없으므로, 현재 정보로는 누구도 의심할 수 없습니다. 조사 결과가 없고, 모든 발언이 '확실한 정보 없음'으로 마무리되었으며, 시민 진영은 기권합니다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2918,
+          "output_tokens": 96,
+          "success": true,
+          "seconds": 5.462
+        }
+      ]
+    },
+    {
+      "case": "village",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 13.6604,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 3,
+      "fallback": true,
+      "research_rounds": 2,
+      "input_tokens": 5941,
+      "output_tokens": 304,
+      "selected_events": 11,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모델 응답 검증 실패로 기본 행동 적용",
+        "evidence_ids": [],
+        "evidence": [],
+        "citation_access_valid": null,
+        "semantic_support": "abstained",
+        "policy": "verified",
+        "research_rounds": 2,
+        "verification_history": [
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1757,
+          "output_tokens": 86,
+          "success": true,
+          "seconds": 3.246
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2120,
+          "output_tokens": 90,
+          "success": true,
+          "seconds": 3.663
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2064,
+          "output_tokens": 128,
+          "success": true,
+          "seconds": 4.731
+        }
+      ]
+    },
+    {
+      "case": "no_evidence",
+      "repeat": 0,
+      "mode": "after",
+      "seconds": 4.867,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1764,
+      "output_tokens": 143,
+      "selected_events": 11,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1의 일상 대화에서 '아직 확실한 정보가 없습니다'가 5회 반복됨. 이는 정보 공유 부족을 나타내며, 늑대가 정보를 숨기기 위한 전략일 가능성이 있음. 하지만 다른 참가자들도 동일한 발언을 했고, 전체 발언 패턴에서 특이점이 없음. 기권 결정.",
+        "evidence_ids": [
+          25,
+          31,
+          33
+        ],
+        "evidence": [
+          {
+            "sequence": 25,
+            "type": "발언",
+            "data": {
+              "actor": "p2",
+              "text": "일상 대화 23: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 31,
+            "type": "발언",
+            "data": {
+              "actor": "p1",
+              "text": "일상 대화 29: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 33,
+            "type": "발언",
+            "data": {
+              "actor": "p3",
+              "text": "일상 대화 31: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          19,
+          24,
+          25,
+          26,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1764,
+          "output_tokens": 143,
+          "success": true,
+          "seconds": 4.863
+        }
+      ]
+    },
+    {
+      "case": "no_evidence",
+      "repeat": 0,
+      "mode": "before",
+      "seconds": 4.5967,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2815,
+      "output_tokens": 87,
+      "selected_events": 33,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화에서 '확실한 정보가 없습니다'라고 말했고, 조사나 공격 등 구체적 증거가 없으므로 누구도 의심할 수 없습니다. 시민 진영은 기권하며, 추방 대상 없이 투표를 진행합니다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2815,
+          "output_tokens": 87,
+          "success": true,
+          "seconds": 4.595
+        }
+      ]
+    },
+    {
+      "case": "investigation",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 4.0622,
+      "expected_target": "p1",
+      "selected_target": "p1",
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1752,
+      "output_tokens": 146,
+      "selected_events": 11,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1이 조사 대상이었고, 그 조사 결과는 시민이 확인하지 않았으며, 다른 참가자들의 발언에서 '아직 확실한 정보가 없습니다'가 반복됨. 이는 정보 부족을 나타내며, 늑대가 조사 결과를 기반으로 기만을 할 수 있음을 시사. 시민은 근거 없이 투표하지 않으며, 기권을 선택한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          3,
+          18,
+          19,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1752,
+          "output_tokens": 146,
+          "success": true,
+          "seconds": 4.057
+        }
+      ]
+    },
+    {
+      "case": "investigation",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 4.9378,
+      "expected_target": "p1",
+      "selected_target": "p1",
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2857,
+      "output_tokens": 96,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "전체 참가자들이 일상 대화를 통해 정보를 공유하지만, 조사 결과는 p1이 늑대임을 확인했으나, 그 정보는 p0이 직접 조사자로 확인한 것으로, 시민 진영은 이를 기반으로 p1을 우선 투표 대상으로 제시한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2857,
+          "output_tokens": 96,
+          "success": true,
+          "seconds": 4.935
+        }
+      ]
+    },
+    {
+      "case": "attack",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 2.6399,
+      "expected_target": "p2",
+      "selected_target": "p6",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2867,
+      "output_tokens": 88,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "공격 목격은 p2가 p6을 광장에서 목격했고, 이는 p6이 늑대일 가능성을 높인다. 하지만 시민은 추측을 기반으로 투표하지 않으며, 조사 결과가 없으므로 기권한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "공격 목격",
+            "data": {
+              "actor": "p2",
+              "target": "p6",
+              "location": "광장",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2867,
+          "output_tokens": 88,
+          "success": true,
+          "seconds": 2.635
+        }
+      ]
+    },
+    {
+      "case": "attack",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 5.4817,
+      "expected_target": "p2",
+      "selected_target": "p6",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1709,
+      "output_tokens": 176,
+      "selected_events": 10,
+      "original_events": 34,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p2가 광장에서 p6를 공격했다는 목격이 존재하지만, 이는 공격 자체를 증명하지 않으며, 공격의 동기나 범인의 진영을 직접적으로 밝히지 못한다. p6의 일상 대화에서 '아직 확실한 정보가 없습니다'라는 반복적 발언은 정보 부족을 나타내며, 늑대가 정보를 숨기기 위한 전략일 수 있다. 그러나 조사 결과나 검시 결과가 없고, 다른 참가자의 발언도 공격 또는 진",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "공격 목격",
+            "data": {
+              "actor": "p2",
+              "target": "p6",
+              "location": "광장",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          15,
+          19,
+          22,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p6",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1709,
+          "output_tokens": 176,
+          "success": true,
+          "seconds": 5.474
+        }
+      ]
+    },
+    {
+      "case": "rumor",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 16.5333,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 3,
+      "fallback": true,
+      "research_rounds": 2,
+      "input_tokens": 5868,
+      "output_tokens": 465,
+      "selected_events": 10,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모델 응답 검증 실패로 기본 행동 적용",
+        "evidence_ids": [],
+        "evidence": [],
+        "citation_access_valid": null,
+        "semantic_support": "abstained",
+        "policy": "verified",
+        "research_rounds": 2,
+        "verification_history": [
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1714,
+          "output_tokens": 156,
+          "success": true,
+          "seconds": 5.119
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2077,
+          "output_tokens": 153,
+          "success": true,
+          "seconds": 5.29
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2077,
+          "output_tokens": 156,
+          "success": true,
+          "seconds": 4.096
+        }
+      ]
+    },
+    {
+      "case": "rumor",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 4.1399,
+      "expected_target": null,
+      "selected_target": "p6",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2875,
+      "output_tokens": 88,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p6가 늑대일 가능성이 있음. p3의 발언에서 'p6가 늑대라고 생각합니다'라고 명시적이며, 다른 참가자들은 정보 없이 말함. 시민은 근거 없는 투표를 피하고, 기권을 선택한다.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "발언",
+            "data": {
+              "actor": "p3",
+              "text": "저는 시민입니다. p6가 늑대라고 생각합니다. 근거는 없습니다.",
+              "day": 2
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2875,
+          "output_tokens": 88,
+          "success": true,
+          "seconds": 4.137
+        }
+      ]
+    },
+    {
+      "case": "location",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 4.1788,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2866,
+      "output_tokens": 103,
+      "selected_events": 34,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화를 통해 확실한 정보를 공유하지 않았고, 탐색 목격은 p4가 창고에서 이루어졌으며, 이는 공격 정보를 제공하지 않음. 시민 진영은 현재까지의 정보를 바탕으로 늑대의 존재를 확인하지 못했으며, 투표는 기권함.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "탐색 목격",
+            "data": {
+              "player": "p4",
+              "location": "창고",
+              "day": 1,
+              "second": 20
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2866,
+          "output_tokens": 103,
+          "success": true,
+          "seconds": 4.177
+        }
+      ]
+    },
+    {
+      "case": "location",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 4.6558,
+      "expected_target": null,
+      "selected_target": "p4",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1763,
+      "output_tokens": 144,
+      "selected_events": 11,
+      "original_events": 34,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p4가 창고를 탐색한 기록이 있지만, 그 외의 정보는 모두 '아직 확실한 정보가 없습니다'로 일관되며, 다른 참가자들도 동일한 발언을 반복하고 있어 정보 부족 상태를 반영한다. 시민 진영은 추가 증거 없이 기만을 의심할 수 없다. 따라서 p4를 의심한다.",
+        "evidence_ids": [
+          27,
+          30,
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 27,
+            "type": "발언",
+            "data": {
+              "actor": "p4",
+              "text": "일상 대화 25: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 30,
+            "type": "발언",
+            "data": {
+              "actor": "p0",
+              "text": "일상 대화 28: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 34,
+            "type": "탐색 목격",
+            "data": {
+              "player": "p4",
+              "location": "창고",
+              "day": 1,
+              "second": 20
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          20,
+          22,
+          25,
+          26,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p4",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1763,
+          "output_tokens": 144,
+          "success": true,
+          "seconds": 4.651
+        }
+      ]
+    },
+    {
+      "case": "private_other",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 4.5709,
+      "expected_target": null,
+      "selected_target": "p3",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1763,
+      "output_tokens": 133,
+      "selected_events": 11,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p3이 일상 대화에서 '아직 확실한 정보가 없습니다'라고 반복적으로 발언했으며, 이는 다른 참가자들과 동일한 패턴을 보이므로 늑대의 행동으로 추정된다. 조사 결과가 없고, 탐색 기록도 부재하므로 기만 가능성은 높다.",
+        "evidence_ids": [
+          25,
+          26,
+          28
+        ],
+        "evidence": [
+          {
+            "sequence": 25,
+            "type": "발언",
+            "data": {
+              "actor": "p2",
+              "text": "일상 대화 23: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 26,
+            "type": "발언",
+            "data": {
+              "actor": "p3",
+              "text": "일상 대화 24: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 28,
+            "type": "발언",
+            "data": {
+              "actor": "p5",
+              "text": "일상 대화 26: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          19,
+          24,
+          25,
+          26,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p3",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1763,
+          "output_tokens": 133,
+          "success": true,
+          "seconds": 4.564
+        }
+      ]
+    },
+    {
+      "case": "private_other",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 4.2187,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2814,
+      "output_tokens": 72,
+      "selected_events": 33,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화에서 '확실한 정보가 없습니다'라고 말했고, 조사나 공격 기록이 없어 늑대의 존재를 추정할 수 없습니다. 따라서 투표는 기권합니다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2814,
+          "output_tokens": 72,
+          "success": true,
+          "seconds": 4.217
+        }
+      ]
+    },
+    {
+      "case": "contradiction",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 4.1258,
+      "expected_target": "p1",
+      "selected_target": null,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2919,
+      "output_tokens": 133,
+      "selected_events": 35,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1의 발언에서 'p6가 늑대라고 생각합니다'는 정보를 기반으로, p6가 늑대일 가능성을 제기하지만, 조사 결과가 p1에 대해 늑대로 지정되지 않았고, 다른 참가자의 관찰이나 증거가 없으므로 p6의 진영을 확정할 근거가 부족하다. 시민 진영은 추리 기반 투표를 하되, 확실한 증거 없이 기권한다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2919,
+          "output_tokens": 133,
+          "success": true,
+          "seconds": 4.125
+        }
+      ]
+    },
+    {
+      "case": "contradiction",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 4.5841,
+      "expected_target": "p1",
+      "selected_target": null,
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1756,
+      "output_tokens": 138,
+      "selected_events": 11,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1이 'p6가 늑대다'라고 주장하지만, 그 근거는 없으며, 조사 결과도 p1에 대한 조사가 없음. p6의 조사 결과는 없고, 다른 참가자도 '확실한 정보 없다'고 말함. 이는 정보 부족으로, p1의 주장은 기반 없음. 기권 결정.",
+        "evidence_ids": [
+          34,
+          31,
+          30
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p1",
+              "team": "wolf",
+              "day": 1
+            },
+            "recipient": "p0"
+          },
+          {
+            "sequence": 31,
+            "type": "발언",
+            "data": {
+              "actor": "p1",
+              "text": "일상 대화 29: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 30,
+            "type": "발언",
+            "data": {
+              "actor": "p0",
+              "text": "일상 대화 28: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          4,
+          22,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1756,
+          "output_tokens": 138,
+          "success": true,
+          "seconds": 4.578
+        }
+      ]
+    },
+    {
+      "case": "village",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 10.4277,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 2,
+      "fallback": false,
+      "research_rounds": 1,
+      "input_tokens": 3877,
+      "output_tokens": 269,
+      "selected_events": 11,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p2가 시민이라고 주장했으나, 조사 결과가 없으며, 다른 참가자들의 발언에서 p6를 늑대로 지적한 기록이 있음. 그러나 그 기록은 일반 대화로, 근거가 부족. 현재 정보 기반으로는 p2에 대한 의심은 없음.",
+        "evidence_ids": [
+          34,
+          29,
+          32
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p2",
+              "team": "village",
+              "day": 1
+            },
+            "recipient": "p0"
+          },
+          {
+            "sequence": 29,
+            "type": "발언",
+            "data": {
+              "actor": "p6",
+              "text": "일상 대화 27: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 32,
+            "type": "발언",
+            "data": {
+              "actor": "p2",
+              "text": "일상 대화 30: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          8,
+          15,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p2",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 1,
+        "verification_history": [
+          {
+            "ok": false,
+            "status": "insufficient",
+            "reason": "인용 기록이 주장을 뒷받침하지 않습니다. 위치 목격만으로 늑대나 공격을 확정하지 마세요."
+          },
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1757,
+          "output_tokens": 142,
+          "success": true,
+          "seconds": 4.675
+        },
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2120,
+          "output_tokens": 127,
+          "success": true,
+          "seconds": 4.738
+        }
+      ]
+    },
+    {
+      "case": "village",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 5.9961,
+      "expected_target": null,
+      "selected_target": "p6",
+      "correct": false,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2918,
+      "output_tokens": 152,
+      "selected_events": 35,
+      "original_events": 35,
+      "required_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p2가 시민이라고 주장했고, p6를 늑대로 지목했으나 근거 없이 발언했으며, 조사 결과는 p2가 조사대상이었고 그 결과는 시민이 확인한 것으로 보임. 시민 진영은 조사 결과를 기반으로 투표를 진행하며, p6의 역할은 아직 확인되지 않음. 현재까지의 정보는 불충분하나, p2의 발언은 신뢰할 수 없음. 투표는 p6를 우선 대상으로 제시함.",
+        "evidence_ids": [
+          34
+        ],
+        "evidence": [
+          {
+            "sequence": 34,
+            "type": "조사",
+            "data": {
+              "target": "p2",
+              "team": "village",
+              "day": 1
+            },
+            "recipient": "p0"
+          }
+        ],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2918,
+          "output_tokens": 152,
+          "success": true,
+          "seconds": 5.993
+        }
+      ]
+    },
+    {
+      "case": "no_evidence",
+      "repeat": 1,
+      "mode": "before",
+      "seconds": 2.7128,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 2815,
+      "output_tokens": 81,
+      "selected_events": 33,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "모든 참가자가 일상 대화에서 '확실한 정보가 없습니다'라고 말했고, 어떠한 탐색이나 조사 결과도 없어 늑대의 존재를 추론할 수 없습니다. 시민은 기권하며, 투표에 참여하지 않습니다.",
+        "evidence_ids": [],
+        "evidence": [],
+        "available_event_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "not_evaluated",
+        "policy": "legacy",
+        "research_rounds": 0,
+        "verification_history": [],
+        "memory_backend": "local"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 2815,
+          "output_tokens": 81,
+          "success": true,
+          "seconds": 2.711
+        }
+      ]
+    },
+    {
+      "case": "no_evidence",
+      "repeat": 1,
+      "mode": "after",
+      "seconds": 4.6813,
+      "expected_target": null,
+      "selected_target": null,
+      "correct": true,
+      "attempts": 1,
+      "fallback": false,
+      "research_rounds": 0,
+      "input_tokens": 1764,
+      "output_tokens": 143,
+      "selected_events": 11,
+      "original_events": 33,
+      "required_recall": null,
+      "out_of_scope_retrieval_ids": 0,
+      "audit": {
+        "summary": "p1의 일관된 '아직 확실한 정보가 없습니다' 발언은 진영에 대한 정보를 공유하지 않으며, 늑대가 일반적인 반응을 유지할 가능성이 높다. 이는 시민이 공격을 추정할 수 있는 근거가 되지 않으나, 다른 참가자들과의 일관성 부족을 지적한다. 기권한다.",
+        "evidence_ids": [
+          26,
+          29,
+          31
+        ],
+        "evidence": [
+          {
+            "sequence": 26,
+            "type": "발언",
+            "data": {
+              "actor": "p3",
+              "text": "일상 대화 24: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 29,
+            "type": "발언",
+            "data": {
+              "actor": "p6",
+              "text": "일상 대화 27: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          },
+          {
+            "sequence": 31,
+            "type": "발언",
+            "data": {
+              "actor": "p1",
+              "text": "일상 대화 29: 아직 확실한 정보가 없습니다.",
+              "day": 1
+            },
+            "recipient": null
+          }
+        ],
+        "available_event_ids": [
+          3,
+          19,
+          24,
+          25,
+          26,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33
+        ],
+        "citation_access_valid": true,
+        "semantic_support": "grounded_suspicion",
+        "claim": {
+          "claim_type": "suspect_wolf",
+          "claim_subject": "p1",
+          "claim_value": ""
+        },
+        "policy": "verified",
+        "research_rounds": 0,
+        "verification_history": [
+          {
+            "ok": true,
+            "status": "grounded_suspicion",
+            "reason": ""
+          }
+        ],
+        "memory_backend": "mcp"
+      },
+      "calls": [
+        {
+          "actor": "p0",
+          "phase": "vote",
+          "model": "qwen3:4b-instruct",
+          "input_tokens": 1764,
+          "output_tokens": 143,
+          "success": true,
+          "seconds": 4.676
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "before": {
+      "runs": 16,
+      "correct": 10,
+      "accuracy": 0.625,
+      "mean_seconds": 4.652475,
+      "p95_seconds": 6.2882,
+      "input_tokens": 45862,
+      "output_tokens": 1624,
+      "mean_attempts": 1,
+      "research_rounds": 0,
+      "fallbacks": 0,
+      "evidence_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0
+    },
+    "after": {
+      "runs": 16,
+      "correct": 11,
+      "accuracy": 0.6875,
+      "mean_seconds": 7.12791875,
+      "p95_seconds": 16.5333,
+      "input_tokens": 42568,
+      "output_tokens": 3267,
+      "mean_attempts": 1.4375,
+      "research_rounds": 7,
+      "fallbacks": 3,
+      "evidence_recall": 1.0,
+      "out_of_scope_retrieval_ids": 0
+    }
+  }
+}

@@ -17,6 +17,8 @@ from .engine import Game, RuleError
 from . import exploration
 from .ai import action_spec
 from .decision import decide
+from .memory_backend import LocalMemory
+from .mcp_memory import MCPMemory, MemoryUnavailable
 from .providers import create_client, ProviderError
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,6 +42,7 @@ class DemoClient:
         payload = self._action(view, schema)
         if "decision_summary" in schema["properties"]:
             payload.update(decision_summary="규칙 봇의 기본 선택입니다.", evidence_ids=[])
+        if "claim_type" in schema["properties"]:payload.update(claim_type="none",claim_subject=None,claim_value="")
         return payload
 
     def _action(self, view, schema):
@@ -70,7 +73,8 @@ class Room:
 
 
 class Hub:
-    def __init__(self, db_path, client_factory=None, turn_seconds=90):
+    def __init__(self, db_path, client_factory=None, turn_seconds=90, memory=None):
+        self.memory=memory or LocalMemory()
         self.db = sqlite3.connect(db_path)
         self.db.execute("CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
         self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms")}
@@ -202,7 +206,7 @@ class Hub:
                     await asyncio.sleep(.2)
                     continue
                 async with self.inference:
-                    outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"])
+                    outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"], self.memory, "verified")
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
                     if ai_view.get("question"):
@@ -222,7 +226,7 @@ class Hub:
             async with room.lock:
                 room.busy = False
                 room.data["status"] = "paused"
-                room.data["error"] = str(error) if isinstance(error, ProviderError) else "실행 오류가 발생했습니다. 서버 설정을 확인한 뒤 재개하세요."
+                room.data["error"] = str(error) if isinstance(error, (ProviderError, MemoryUnavailable)) else "실행 오류가 발생했습니다. 서버 설정을 확인한 뒤 재개하세요."
                 if room.client:
                     room.data["metrics"].extend(room.client.metrics)
                     room.client.metrics.clear()
@@ -268,17 +272,24 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
     async def lifespan(app):
         path = db_path or os.environ.get("GAME_DB", str(ROOT/"runtime"/"games.db"))
         if path != ":memory:": Path(path).parent.mkdir(parents=True,exist_ok=True)
-        app.state.hub = Hub(path,client_factory,turn_seconds)
-        for room in app.state.hub.rooms.values():
-            if room.data["status"] == "running":
-                room.data["status"] = "paused"
-                room.data["error"] = "서버가 재시작되었습니다. 방장이 재개할 수 있습니다."
-                app.state.hub.save(room)
-        yield
-        tasks = [r.task for r in app.state.hub.rooms.values() if r.task and not r.task.done()]
-        for task in tasks: task.cancel()
-        await asyncio.gather(*tasks,return_exceptions=True)
-        app.state.hub.db.close()
+        memory=await asyncio.to_thread(MCPMemory) if auto_workers else LocalMemory()
+        hub = None
+        try:
+            hub = Hub(path,client_factory,turn_seconds,memory)
+            app.state.hub = hub
+            for room in hub.rooms.values():
+                if room.data["status"] == "running":
+                    room.data["status"] = "paused"
+                    room.data["error"] = "서버가 재시작되었습니다. 방장이 재개할 수 있습니다."
+                    hub.save(room)
+            yield
+        finally:
+            if hub is not None:
+                tasks = [r.task for r in hub.rooms.values() if r.task and not r.task.done()]
+                for task in tasks: task.cancel()
+                await asyncio.gather(*tasks,return_exceptions=True)
+                hub.db.close()
+            await asyncio.to_thread(memory.close)
     app = FastAPI(lifespan=lifespan)
 
     @app.exception_handler(RuleError)
