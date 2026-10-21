@@ -24,6 +24,9 @@ from .inference_pool import InferencePool, run_blocking, create_blocking_resourc
 from .time_budget import run_with_budget
 from .circuit_breaker import CircuitTransport
 from .runtime_settings import RuntimeSettings
+from .observability import Monitor
+from .mlflow_tracking import RuntimeExporter
+from .operations import install as install_operations
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -93,6 +96,7 @@ class Hub:
         self.client_factory = client_factory or self.default_client
         self.turn_seconds = turn_seconds
         self.inference = InferencePool(concurrency=self.settings.concurrency)
+        self.monitor = Monitor()
 
     def default_client(self):
         if os.environ.get("GAME_PROVIDER") == "demo": return DemoClient()
@@ -245,13 +249,14 @@ class Hub:
                 async with self.inference.slot():
                     queue_wait=time.perf_counter()-queued
                     outcome = await run_blocking(
-                        run_with_budget, self.settings.decision_seconds, decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
+                        self.monitor.run, room.data["backend"], room.client, run_with_budget, self.settings.decision_seconds, decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
                         discussion_quality=not isinstance(room.client, DemoClient),
                         previous_beliefs=room.data.get("beliefs",{}).get(actor),
                         belief_memory=not isinstance(room.client, DemoClient),
                         skip_forced=True,
                         context_budget=self.settings.context_budget,
                         suspicion_policy=self.settings.suspicion_policy,
+                        queue_wait=queue_wait,
                     )
                 outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
                 async with room.lock:
@@ -327,12 +332,15 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         settings = RuntimeSettings.from_env()
         path = db_path or os.environ.get("GAME_DB", str(ROOT/"runtime"/"games.db"))
         if path != ":memory:": Path(path).parent.mkdir(parents=True,exist_ok=True)
-        memory = transport = hub = None
+        memory = transport = hub = exporter = None
         try:
             memory=await create_blocking_resource(MCPMemory) if auto_workers else LocalMemory()
             transport = CircuitTransport(PooledTransport())
             hub = Hub(path,client_factory,turn_seconds,memory,transport,settings)
             app.state.hub = hub
+            if auto_workers and os.environ.get("GAME_MLFLOW_TRACKING_URI"):
+                exporter = RuntimeExporter(os.environ["GAME_MLFLOW_TRACKING_URI"])
+                hub.monitor.exporter = exporter
             for room in hub.rooms.values():
                 if room.data["status"] == "running":
                     room.data["status"] = "paused"
@@ -363,8 +371,12 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                 try:
                     if memory is not None: await asyncio.to_thread(memory.close)
                 finally:
-                    if transport is not None: transport.close()
+                    try:
+                        if transport is not None: transport.close()
+                    finally:
+                        if exporter is not None: await asyncio.to_thread(exporter.close)
     app = FastAPI(lifespan=lifespan)
+    install_operations(app, ROOT)
 
     @app.exception_handler(RuleError)
     async def rule_error(request, error):
