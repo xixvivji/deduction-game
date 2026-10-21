@@ -32,7 +32,7 @@ def human_turn(game, actor):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--players", type=int, choices=(5, 7), default=7)
+    parser.add_argument("--players", type=int, choices=(5, 7, 9, 11), default=7)
     parser.add_argument("--provider", choices=("ollama", "openai", "gemini"), default="ollama")
     parser.add_argument("--model", help="외부 API 사용 시 필수")
     parser.add_argument("--max-calls", type=int, default=200)

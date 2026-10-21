@@ -17,17 +17,19 @@ class Player:
 
 
 class Game:
+    SIZES = (5, 7, 9, 11)
     LOCATIONS = ("광장", "창고", "숲길")
 
     def __init__(self, room_id, controllers, *, seed=None, max_days=8):
-        if len(controllers) not in (5, 7) or any(c not in ("human", "ai") for c in controllers.values()):
-            raise RuleError("참가자는 human/ai로 구성된 5명 또는 7명이어야 합니다")
+        if len(controllers) not in self.SIZES or any(c not in ("human", "ai") for c in controllers.values()):
+            raise RuleError("참가자는 human/ai로 구성된 5·7·9·11명이어야 합니다")
         if max_days < 1:
             raise RuleError("최대 일수는 1 이상이어야 합니다")
         self.room_id = room_id
         self.rng = random.Random(seed)
-        wolves = 1 if len(controllers) == 5 else 2
-        specials = ["seer", "doctor"] if len(controllers) == 7 else ["seer"]
+        wolves = {5: 1, 7: 2, 9: 2, 11: 3}[len(controllers)]
+        specials = ["seer"] if len(controllers) == 5 else ["seer", "doctor"]
+        if len(controllers) >= 9: specials += ["tracker", "coroner"]
         roles = ["wolf"] * wolves + specials + ["citizen"] * (len(controllers) - wolves - len(specials))
         self.rng.shuffle(roles)
         self.players = {pid: Player(pid, c, role) for (pid, c), role in zip(controllers.items(), roles)}
@@ -68,7 +70,8 @@ class Game:
             if actor in self.actions or location not in self.LOCATIONS:
                 raise RuleError("중복 행동 또는 잘못된 장소입니다")
             if target is not None:
-                if not isinstance(target, str) or target not in self.living() or (target == actor and p.role != "doctor"):
+                valid_targets = [q.id for q in self.players.values() if not q.alive] if p.role == "coroner" else self.living()
+                if not isinstance(target, str) or target not in valid_targets or (target == actor and p.role != "doctor"):
                     raise RuleError("잘못된 대상입니다")
                 if p.role == "doctor" and self.last_protected.get(actor) == target:
                     raise RuleError("같은 대상을 연속으로 보호할 수 없습니다")
@@ -152,6 +155,12 @@ class Game:
                 if self.players[pid].role == "seer" and action["target"]:
                     target = action["target"]
                     private.append((pid, "조사", {"target": target, "team": "wolf" if self.players[target].role == "wolf" else "village", "day": self.day}))
+                if self.players[pid].role == "tracker" and action["target"]:
+                    target = action["target"]
+                    private.append((pid, "추적", {"target": target, "location": self.actions[target]["location"], "day": self.day}))
+                if self.players[pid].role == "coroner" and action["target"]:
+                    target = action["target"]
+                    private.append((pid, "검시", {"target": target, "role": self.players[target].role, "day": self.day}))
             # 살아 있는 늑대 전원이 같은 대상을 선택해야 한 명만 공격한다.
             targets = [a["target"] for pid, a in self.actions.items() if self.players[pid].role == "wolf"]
             victim = targets[0] if targets and targets[0] is not None and len(set(targets)) == 1 else None

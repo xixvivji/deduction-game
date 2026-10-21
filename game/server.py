@@ -202,7 +202,7 @@ class Hub:
 
 class CreateBody(BaseModel):
     name: str = Field(min_length=1, max_length=20)
-    size: int = Field(default=7, ge=5, le=7)
+    size: int = Field(default=7, ge=5, le=11)
 
 
 class JoinBody(BaseModel):
@@ -254,7 +254,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
 
     @app.post("/api/rooms")
     async def create(body:CreateBody, request:Request):
-        if body.size not in (5,7): raise RuleError("5인 또는 7인을 선택하세요")
+        if body.size not in Game.SIZES: raise RuleError("5·7·9·11인 중 선택하세요")
         room, token = request.app.state.hub.create(body.name,body.size)
         return {"room_id":room.data["id"],"token":token}
 
