@@ -8,7 +8,7 @@ from .memory_backend import LocalMemory, scoped
 from .evidence import claim_schema, verify, statement
 from langgraph.graph import StateGraph, END
 from .ai import action_spec, validate
-from .memory import retrieve
+from . import discussion
 from .providers import ProviderError
 
 
@@ -30,11 +30,17 @@ class DecisionState(TypedDict, total=False):
     verification: dict
     verification_history: list
     claim: dict
+    discussion_quality: bool
+    quality_retries: int
+    quality_history: list
+    quality: dict
 
 
 @traceable(name="memory_selection",run_type="retriever")
 def select(state):
     view = state["memory"].search(state["view"]) if state.get("memory_mode") == "retrieved" else scoped(state["view"])
+    if state.get("discussion_quality") and view["phase"] == "discussion":
+        discussion.attach_context(view,state["view"])
     kind, schema = action_spec(view)
     schema = copy.deepcopy(schema)
     schema["properties"].update({
@@ -44,7 +50,7 @@ def select(state):
     schema["required"] += ["decision_summary", "evidence_ids"]
     if state.get("policy")=="verified":
         schema["properties"].update(claim_schema(view));schema["required"]+=list(claim_schema(view))
-    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[]}
+    return {"selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"quality_history":[]}
 
 
 @traceable(name='model_decision',run_type='llm')
@@ -90,8 +96,15 @@ def validate_evidence(state):
             label='주장: ' if result['status']=='game_deception_allowed' else '의견: '
             text=re.sub(r'^(?:(?:의견|주장)\s*[:：]\s*)+', '', payload['text'].strip()).strip()
             payload['text']=label+(text or '판단을 보류하겠습니다.')[:500-len(label)]
+    quality={'ok':True,'issues':[]}
+    if result['ok'] and state.get('discussion_quality') and state['kind']=='speak':
+        quality=discussion.check(state['view'],payload['text'],result['status'])
+    history=state.get('quality_history',[])+([quality] if state.get('discussion_quality') and state['kind']=='speak' else [])
+    audit['discussion_quality']=quality
+    error=result['reason'] if not result['ok'] else discussion.feedback(quality)
     return {'verification':result,'verification_history':state['verification_history']+[result],
-            'audit':audit,'payload':payload,'error':result['reason'] if not result['ok'] else ''}
+            'audit':audit,'payload':payload,'error':error,'quality':quality,'quality_history':history}
+
 
 
 @traceable(name='evidence_research',run_type='retriever')
@@ -99,17 +112,27 @@ def research(state):
     claim=state['claim']
     query=' '.join(str(claim.get(k) or '') for k in ('claim_subject','claim_type','claim_value'))+' 조사 공격 목격 방문 장소'
     selected=state['memory'].search(state['view'],query=query,expanded=True)
+    if state.get('discussion_quality') and state['kind']=='speak':
+        discussion.attach_context(selected,state['view'])
     return {'selected':selected,'research_rounds':state['research_rounds']+1}
 
 
 def after_validation(state):
-    if state['verification']['ok']:return 'done'
+    if state['verification']['ok']:
+        if state.get('quality',{}).get('ok',True):return 'done'
+        return 'repair' if state.get('quality_retries',0)<1 and state['attempts']<3 else 'fallback'
     return 'research' if state['research_rounds']<2 and state['attempts']<3 else 'fallback'
+
+
+def repair(state):
+    return {'quality_retries':state.get('quality_retries',0)+1}
 
 
 def fallback(state):
     kind = state["kind"]
     payload = {"text": "판단을 보류하겠습니다."} if kind == "speak" else {"target": None}
+    if kind == "speak" and state.get("discussion_quality"):
+        payload["text"]=discussion.safe_speech(state["view"])
     if kind == "council": payload["text"] = "공격을 보류합니다."
     if kind == "night": payload["location"] = state["selected"]["self"].get("explored_location", "광장")
     return {"payload": payload, "fallback": True, "audit": {"summary": "모델 응답 검증 실패로 기본 행동 적용", "evidence_ids": [], "evidence": [], "citation_access_valid": None, "semantic_support": "abstained" if state.get("policy")=="verified" else "not_evaluated"}}
@@ -126,10 +149,12 @@ def build_graph():
     graph.add_node("fallback", fallback)
     graph.add_node("validate_evidence", validate_evidence)
     graph.add_node("research", research)
+    graph.add_node("repair", repair)
+    graph.add_edge("repair", "generate")
     graph.set_entry_point("memory")
     graph.add_edge("memory", "generate")
     graph.add_conditional_edges("generate", route, {"done": "validate_evidence", "retry": "generate", "fallback": "fallback"})
-    graph.add_conditional_edges("validate_evidence",after_validation,{"done":END,"research":"research","fallback":"fallback"})
+    graph.add_conditional_edges("validate_evidence",after_validation,{"done":END,"research":"research","repair":"repair","fallback":"fallback"})
     graph.add_edge("research","generate")
     graph.add_edge("fallback", END)
     return graph.compile()
@@ -139,10 +164,10 @@ GRAPH = build_graph()
 
 
 @traceable(name='participant_decision',run_type='chain',process_inputs=lambda d:{'actor':d.get('view',{}).get('self',{}).get('id'),'phase':d.get('view',{}).get('phase'),'policy':d.get('policy','legacy')})
-def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy"):
+def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True):
     result = GRAPH.invoke({"view": scoped(view), "client": client, "memory_mode": memory_mode,
-                           "memory":memory or LocalMemory(),"policy":policy}, config={"recursion_limit": 20})
+                           "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified"}, config={"recursion_limit": 20})
     outcome={key: result[key] for key in ("kind", "payload", "attempts", "fallback", "audit")}
     outcome['audit'].update(policy=policy,research_rounds=result['research_rounds'],
-                            verification_history=result['verification_history'],memory_backend=(memory or LocalMemory()).name)
+                            verification_history=result['verification_history'],quality_retries=result['quality_retries'],quality_history=result['quality_history'],discussion_quality_enabled=discussion_quality and policy=='verified',memory_backend=(memory or LocalMemory()).name)
     return outcome

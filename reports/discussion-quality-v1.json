@@ -1,0 +1,28 @@
+{
+  "model": "gpt-4.1-mini",
+  "scope": "4 synthetic situations x repeats, paired same-input. Both MCP + verified evidence. Only discussion quality toggle differs. Heuristic flags are NOT semantic accuracy or an independent judge. No holdout; order alternated; no warm-up excluded. Raw text stays local.",
+  "repeats": 2,
+  "results": {
+    "before": {
+      "runs": 8,
+      "heuristic_flagged_outputs": 2,
+      "mean_seconds": 1.461,
+      "generation_attempts": 8,
+      "quality_retries": 0,
+      "fallbacks": 0,
+      "input_tokens": 11044,
+      "output_tokens": 851
+    },
+    "after": {
+      "runs": 8,
+      "heuristic_flagged_outputs": 0,
+      "mean_seconds": 1.657,
+      "generation_attempts": 8,
+      "quality_retries": 0,
+      "fallbacks": 0,
+      "input_tokens": 14462,
+      "output_tokens": 941
+    }
+  },
+  "scoring_note": "Same recorded outputs rescored after fixing false-positive agreement negation in quoted speech. No further model calls. Manual inspection: dead-target outputs correctly rejected dead voting in both conditions; only repeated deferral remained flagged before."
+}

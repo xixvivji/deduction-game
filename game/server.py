@@ -206,7 +206,7 @@ class Hub:
                     await asyncio.sleep(.2)
                     continue
                 async with self.inference:
-                    outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"], self.memory, "verified")
+                    outcome = await asyncio.to_thread(decide, ai_view, room.client, room.data["memory"], self.memory, "verified", not isinstance(room.client, DemoClient))
                 async with room.lock:
                     g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
                     if ai_view.get("question"):
