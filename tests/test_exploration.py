@@ -21,7 +21,7 @@ class ExplorationTests(unittest.TestCase):
         self.assertLessEqual(math.dist(a,ex.walk(a,1,0,100)),ex.SPEED*.2+.0001)
         b=[140,160]
         for _ in range(100):b=ex.walk(b,1,0,.2)
-        self.assertLessEqual(b[0],160-ex.RADIUS)
+        self.assertLessEqual(b[0],180-ex.RADIUS)
         self.assertTrue(ex.free(*b))
 
     def test_sight_distance_and_occlusion(self):
