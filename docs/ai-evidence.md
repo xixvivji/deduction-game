@@ -32,14 +32,14 @@ MCP 실패 시 웹은 방을 일시 중단한다. 검색이 실패했다고 전�
 
 ## LangSmith
 
-기존 실행 명령에 LANGSMITH_TRACING=true, LANGSMITH_API_KEY, LANGSMITH_PROJECT를 설정하면 추적한다. 환경파일 자동 로딩은 하지 않는다. 키는 Git에 넣지 않는다. 기본은 추적 비활성이다. 추적에는 개인 역할·관측·발언이 포함될 수 있다.
+기존 실행 명령에 LANGSMITH_TRACING=true, LANGSMITH_API_KEY, LANGSMITH_PROJECT를 설정하면 추적한다. ./run_web.sh 실행 시 루트 .env를 읽으며 기존 환경변수가 우선한다. 키는 Git에 넣지 않는다. 기본은 추적 비활성이다. 추적에는 개인 역할·관측·발언이 포함될 수 있다.
 
-SDK의 create_run/update_run을 모의 처리한 테스트로 생성·검증 span 발생을 확인했다. 실제 API 키가 없어 원격 대시보드 저장은 검증하지 않았다. 이는 원격 연동 완료와 구분한다.
+SDK의 create_run/update_run 모의 테스트에 더해, 2026-10-21 실제 계정에서 7인 게임의 AI 판단 72건이 모두 완료 상태로 저장된 것을 확인했다. 샘플 하위 span의 room_id를 대조해 MCP 검색·모델 생성·근거 검증이 해당 게임에 연결됐음을 확인했다.
 
 ## 검증 및 남은 과제
 
 실제 stdio MCP 왕복, 참가자 간 기억 분리, 서명 위조 거부, 폐기된 context 거부, 재검색 성공/상한, 사실 발언 표준화, 늑대 기만 구분, 웹 lifespan 연결을 테스트한다. 실제 로컬 모델의 짝지은 결과는 reports/evidence-pipeline-v1.md를 참고한다.
 
-다음 과제는 별도의 미사용 평가 세트, 공격 목격 기반 투표 실패 분석, 장기 게임 승률·대화 품질 평가다. Multi-Agent/MCP/RAG/의존성 주입/테스트의 구현 근거는 있지만 발표 자료 작성과 실제 LangSmith 계정 검증은 별도다.
+다음 과제는 별도의 미사용 평가 세트, 공격 목격 기반 투표 실패 분석, 장기 게임 승률·대화 품질 평가다. Multi-Agent/MCP/RAG/의존성 주입/테스트의 구현 근거는 있지만 발표 자료 작성과 더 넓은 품질 평가는 별도다.
 
 참고: [공식 MCP Python SDK v1](https://py.sdk.modelcontextprotocol.io/v1/)

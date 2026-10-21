@@ -106,14 +106,14 @@ AI의 비밀 협의·토론은 기존 LLM/LangGraph를 사용합니다. 현장�
 - `GAME_DB`: SQLite 파일 경로, 기본 `runtime/games.db`
 - `GAME_HOST`, `GAME_PORT`: 기본 127.0.0.1, 8200
 
-외부 API는 서버 환경변수 `OPENAI_API_KEY` 또는 `GEMINI_API_KEY`를 설정하세요. 키는 프런트엔드나 Git에 넣지 않습니다. `.env` 자동 로딩은 하지 않습니다. 외부 모델을 선택하면 허용된 개인 게임 기록이 해당 제공자에게 전송됩니다.
+외부 API는 서버 환경변수 `OPENAI_API_KEY` 또는 `GEMINI_API_KEY`를 설정하세요. 키는 프런트엔드나 Git에 넣지 않습니다. `./run_web.sh`는 루트의 `.env`를 자동으로 읽습니다. 이미 지정한 환경변수가 우선합니다. 외부 모델을 선택하면 허용된 개인 게임 기록이 해당 제공자에게 전송됩니다.
 
 ```sh
 GAME_PROVIDER=openai GAME_MODEL=YOUR_MODEL_ID ./run_web.sh
 GAME_PROVIDER=gemini GAME_MODEL=YOUR_MODEL_ID ./run_web.sh
 ```
 
-외부 API 어댑터는 모의 응답으로 검증했습니다. 실제 계정의 모델 접근·구조화 출력 호환성과 응답 품질은 아직 실호출 검증하지 않았습니다. OpenAI는 Responses API의 `store=false`, Gemini는 generateContent API를 사용합니다. `store=false`가 모든 제공자 보존 정책을 없애는 것은 아닙니다.
+OpenAI gpt-4.1-mini는 실제 7인 게임을 종료까지 실행해 구조화 출력과 게임 연결을 확인했습니다. Gemini는 모의 응답만 검증했습니다. 상세 결과와 대화 품질 한계는 [실제 게임 검증](reports/openai-live-v1.md)을 참고하세요. OpenAI는 Responses API의 `store=false`, Gemini는 generateContent API를 사용합니다. `store=false`가 모든 제공자 보존 정책을 없애는 것은 아닙니다.
 
 입력/출력/총 토큰은 제공자가 반환한 값으로 기록하고 누락값은 null로 유지합니다. Gemini 사고 토큰은 별도 필드입니다. 비용을 임의의 단가로 계산하지 않습니다. 모델 오류는 최대 1회 재시도하며, 인증/설정/호출 한도 오류는 방을 일시 중단합니다. 한도에 걸린 게임은 서버의 한도 설정을 높인 후 재시작·재개할 수 있습니다.
 
@@ -151,7 +151,7 @@ CLI는 이전 순차 기준선이고, 웹의 AI는 LangGraph/기억 검색을 �
 
 평가는 합성 조사 결과로부터 투표 대상을 고르는 4개 고정 상황입니다. 전체 기록과 검색 기록에 같은 질문·상태를 사용하며 정답은 모델 입력 밖에서 채점합니다. 모델 최초 적재 시간도 포함합니다. 소수 사례 결과를 전체 추리력·승률·사람 수준 설득력으로 일반화하지 않습니다.
 
-LangGraph 추적은 선택적으로 `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`를 설정해 활성화할 수 있습니다. 추적에는 개인 역할과 대화가 포함될 수 있으며 기본으로 활성화하지 않습니다. 실제 LangSmith 계정 연결은 아직 검증하지 않았습니다.
+LangGraph 추적은 선택적으로 `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`를 설정해 활성화할 수 있습니다. 추적에는 개인 역할과 대화가 포함될 수 있으며 기본으로 활성화하지 않습니다. 실제 LangSmith 계정에서 해당 게임의 AI 판단 72건이 완료 상태로 저장된 것을 확인했습니다.
 
 ## 남아 있는 한계
 

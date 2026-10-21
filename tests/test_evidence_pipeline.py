@@ -27,6 +27,16 @@ class Scripted:
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_opinion_label_is_not_duplicated(self):
+        from game.decision import validate_evidence
+        view=fixture().observation('p0');view['phase']='discussion'
+        state={'policy':'verified','selected':view,
+               'claim':{'claim_type':'none','claim_subject':None,'claim_value':''},
+               'audit':{'evidence_ids':[]},'payload':{'text':'의견: 의견: 아직 판단하기 어렵습니다.'},
+               'verification_history':[]}
+        result=validate_evidence(state)
+        self.assertEqual(result['payload']['text'],'의견: 아직 판단하기 어렵습니다.')
+
     def test_fact_supported_and_local_di(self):
         result=decide(fixture().observation('p0'),Scripted(),memory=LocalMemory(),policy='verified')
         self.assertEqual(result['audit']['semantic_support'],'supported_fact')

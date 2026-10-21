@@ -1,0 +1,21 @@
+{
+  "room_id": "45b6c142",
+  "winner": "wolf",
+  "days": 4,
+  "seconds": 115.93,
+  "human_actions": 13,
+  "question_sent": true,
+  "ai_decisions": 72,
+  "model_calls": 73,
+  "fallbacks": 0,
+  "research_rounds": 1,
+  "input_tokens": 155758,
+  "output_tokens": 7508,
+  "failed_calls": 0,
+  "phases": {
+    "night": 21,
+    "discussion": 30,
+    "vote": 15,
+    "council": 6
+  }
+}

@@ -1,6 +1,7 @@
 """관측 → 기억 검색 → 생성 → 검증 → 제한 재시도/기본 행동의 LangGraph."""
 import time
 import copy
+import re
 from typing import TypedDict
 from langsmith import traceable
 from .memory_backend import LocalMemory, scoped
@@ -85,7 +86,10 @@ def validate_evidence(state):
     # Render checked facts from structured claims, never endorse unchecked free text as fact.
     if result['ok'] and 'text' in payload:
         if result['status'] in ('supported_fact','grounded_suspicion'):payload['text']=statement(state['claim'])
-        else:payload['text']=('주장: ' if result['status']=='game_deception_allowed' else '의견: ')+payload['text'][:495]
+        else:
+            label='주장: ' if result['status']=='game_deception_allowed' else '의견: '
+            text=re.sub(r'^(?:(?:의견|주장)\s*[:：]\s*)+', '', payload['text'].strip()).strip()
+            payload['text']=label+(text or '판단을 보류하겠습니다.')[:500-len(label)]
     return {'verification':result,'verification_history':state['verification_history']+[result],
             'audit':audit,'payload':payload,'error':result['reason'] if not result['ok'] else ''}
 
