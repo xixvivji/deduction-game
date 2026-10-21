@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from .memory_backend import scoped
+from .suspicion import DEFAULT_SUSPICION_POLICY
 
 
 def _facts(event):
@@ -39,7 +40,7 @@ def public_ledger(ledger):
     return {k:copy.deepcopy(v) for k,v in ledger.items() if k!='_checkpoint'}
 
 
-def update(view, previous=None, incremental=True):
+def update(view, previous=None, incremental=True, suspicion_policy=DEFAULT_SUSPICION_POLICY):
     view=scoped(view)
     owner=view['self']['id'];room=view.get('room_id')
     previous=previous or {}
@@ -56,36 +57,43 @@ def update(view, previous=None, incremental=True):
         states={item['status'] for item in facts}
         state='conflicted' if len(states)>1 else next(iter(states)) if states else 'unknown'
         ids=[item['id'] for item in facts]
-        if not facts and old.get('status')=='suspected':
-            ids=[i for i in old.get('evidence_ids',[]) if i in events and target in [events[i]['data'].get(k) for k in ('actor','target','player')]]
-            if ids:state='suspected'
+        if not facts and old.get('status') in ('suspected','needs_review'):
+            candidates = [events[i] for i in old.get('evidence_ids',[]) if i in events]
+            support = suspicion_policy.evidence(candidates, target, view['day'], include_stale=True)
+            ids = [e['sequence'] for e in support]
+            if ids:
+                state = 'suspected' if any(suspicion_policy.fresh(e, view['day']) for e in support) else 'needs_review'
         reason={'unknown':'진영을 판단할 근거가 아직 없습니다.',
                 'suspected':'관련 기록에 기반한 이전 의심이며 확정 사실은 아닙니다.',
+                'needs_review':'이전 의심의 근거가 오래되어 재검토가 필요합니다. 새 근거 없이 현재 의심으로 재사용하지 않습니다.',
                 'confirmed_wolf':'본인에게 허용된 조사·검시·공격 목격이 늑대 진영을 뒷받침합니다.',
                 'confirmed_village':'본인에게 허용된 조사·검시가 시민 진영을 뒷받침합니다.',
                 'conflicted':'허용된 확정 기록이 서로 충돌합니다. 진영 확정을 보류합니다.'}[state]
         changed=old.get('status','unknown')!=state
         entries[target]={'status':state,'alive':player['alive'],'evidence_ids':sorted(set(ids)),
-                         'reason':reason,'updated_day':view['day'] if changed or not old or old.get('evidence_ids')!=sorted(set(ids)) else old.get('updated_day',view['day'])}
+                         'reason':reason,'evidence_day':max((events[i]['data']['day'] for i in ids if type(events[i]['data'].get('day')) is int),default=None),'updated_day':view['day'] if changed or not old or old.get('evidence_ids')!=sorted(set(ids)) else old.get('updated_day',view['day'])}
         if changed:
             changes.append({'target':target,'from':old.get('status','unknown'),'to':state,
                             'day':view['day'],'evidence_ids':sorted(set(ids)),'reason':reason})
-    return {'owner':owner,'room_id':room,'entries':entries,'changes':changes,
+    return {'owner':owner,'room_id':room,'policy':{'suspicion_max_age_days':suspicion_policy.max_age_days},'entries':entries,'changes':changes,
             'history':(copy.deepcopy(previous.get('history',[]))+changes)[-20:],
             '_checkpoint':checkpoint,'update_stats':{'fact_events_processed':processed,'checkpoint_reused':reused}}
 
 
-def record_suspicion(view, ledger, audit, fallback):
+def record_suspicion(view, ledger, audit, fallback, suspicion_policy=DEFAULT_SUSPICION_POLICY):
     """Never turn a wolf's public deception into its private belief."""
     if fallback or view['self']['role']=='wolf' or audit.get('semantic_support')!='grounded_suspicion':return ledger
     claim=audit.get('claim',{});target=claim.get('claim_subject');entry=ledger['entries'].get(target)
-    if not entry or entry['status'] not in ('unknown','suspected'):return ledger
+    if not entry or entry['status'] not in ('unknown','suspected','needs_review'):return ledger
     visible={e['sequence']:e for e in scoped(view)['events']}
-    ids=[i for i in audit.get('evidence_ids',[]) if i in visible and target in [visible[i]['data'].get(k) for k in ('actor','target','player')]]
+    support=suspicion_policy.evidence([visible[i] for i in audit.get('evidence_ids',[]) if i in visible], target, view['day'])
+    ids=sorted({e['sequence'] for e in support})
     if not ids:return ledger
+    if entry['status']=='suspected' and entry['evidence_ids']==ids:return ledger
     ledger=copy.deepcopy(ledger);old=ledger['entries'][target]
     ledger['entries'][target]={**old,'status':'suspected','evidence_ids':ids,
-        'reason':'AI가 관련 기록을 근거로 의심을 선택했습니다. 진영을 확정한 것은 아닙니다.','updated_day':view['day']}
+        'reason':'AI가 관련 기록을 근거로 의심을 선택했습니다. 진영을 확정한 것은 아닙니다.','updated_day':view['day'],
+        'evidence_day':max(e['data']['day'] for e in support)}
     if old['status']!='suspected':
         change={'target':target,'from':old['status'],'to':'suspected','day':view['day'],
                 'evidence_ids':ids,'reason':ledger['entries'][target]['reason']}
@@ -117,12 +125,12 @@ def check(view, ledger, claim, payload):
 
 def retraction(ledger, claim):
     target=claim.get('claim_subject')
-    if claim.get('claim_type')=='confirmed_village' and any(c['target']==target and c['from']=='suspected' and c['to']=='confirmed_village' for c in ledger['changes']):
+    if claim.get('claim_type')=='confirmed_village' and any(c['target']==target and c['from'] in ('suspected','needs_review') and c['to']=='confirmed_village' for c in ledger['changes']):
         return '새 확인 근거에 따라 이전 의심을 철회합니다. '
     return ''
 
 
 def instructions(view):
     if not view.get('belief_memory'):return ''
-    return '''\nbelief_memory는 본인만 볼 수 있는 개인 판단 기록이다. suspected는 의심, confirmed_*는 허용된 시스템 근거, conflicted는 확정 기록 충돌이다. unknown은 정보 없음이다. 사망자의 기록은 과거 회고이며 현재 투표 대상으로 사용하지 않는다.
+    return '''\nbelief_memory는 본인만 볼 수 있는 개인 판단 기록이다. suspected는 의심, confirmed_*는 허용된 시스템 근거, conflicted는 확정 기록 충돌이다. unknown은 정보 없음이다. needs_review는 근거의 유효 기간이 지난 과거 의심이며 새 근거로 재검토해야 한다. evidence_day는 원본 근거의 일차다. 같은 주장을 반복해도 유효 기간은 연장되지 않는다. 사망자의 기록은 과거 회고이며 현재 투표 대상으로 사용하지 않는다.
 새 근거가 이전 의심을 뒤집으면 그 변화를 반영하라. 공개 발언에서 어떤 개인 정보를 공개할지는 역할 전략에 따라 결정하되 기록에 없는 사실을 만들지 마라. 이 기록은 자유 발언이나 다른 참가자의 주장이 진실이라는 보장이 아니다. 늑대는 개인 판단과 공개 기만을 구분하며 개인 판단 기록이나 동료 정보를 그대로 낭독하지 않는다.'''

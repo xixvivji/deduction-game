@@ -250,6 +250,8 @@ class Hub:
                         previous_beliefs=room.data.get("beliefs",{}).get(actor),
                         belief_memory=not isinstance(room.client, DemoClient),
                         skip_forced=True,
+                        context_budget=self.settings.context_budget,
+                        suspicion_policy=self.settings.suspicion_policy,
                     )
                 outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
                 async with room.lock:

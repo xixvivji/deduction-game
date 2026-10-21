@@ -75,7 +75,7 @@ def retrieve(view, query=None, top_k=8, recent=6, use_cache=None, *, expand=True
                           list(range(max(0, len(events)-recent), len(events)))))
     result['events'] = [events[i] for i in selected]
     result['memory'] = {
-        'mode': 'retrieved', 'strategy': strategy,
+        'mode': 'retrieved', 'strategy': strategy, 'ranked_event_ids':[events[i]['sequence'] for i in ranked],
         'original_events': len(events), 'selected_events': len(selected),
         'search_seconds': time.perf_counter()-started, 'cache_hits': cache_hits,
         'cache_misses': len(events)-cache_hits,
