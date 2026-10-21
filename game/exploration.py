@@ -57,7 +57,7 @@ def route(start, goal):
 def begin(game, duration=30):
     positions={p:[380+(i%5)*40,260+(i//5)*40] for i,p in enumerate(game.living())}
     paths={p:route(pos,PLACES[game.rng.choice(list(PLACES))]) for p,pos in positions.items() if game.players[p].controller=='ai'}
-    return {'day':game.day,'duration':duration,'elapsed':0.,'positions':positions,'paths':paths,'seen':{},'active':True}
+    return {'day':game.day,'duration':duration,'elapsed':0.,'positions':positions,'paths':paths,'seen':{},'active':True,'bodies':{},'cooldowns':{},'shields':list(set(t for doctor,t in game.last_protected.items() if doctor in game.living() and t in game.living())),'meeting':False,'moving':{}}
 
 
 def tick(state, game, dt, intents, now):
@@ -75,6 +75,7 @@ def tick(state, game, dt, intents, now):
             if now-stamp>.35:dx=dy=0
             step=dt
         state['positions'][pid]=walk(pos,dx,dy,step)
+        state.setdefault('moving',{})[pid]=math.dist(pos,state['positions'][pid])>.01
     for viewer,a in state['positions'].items():
         if not game.players[viewer].alive:continue
         for other,b in state['positions'].items():
@@ -82,16 +83,20 @@ def tick(state, game, dt, intents, now):
             location=place(b);key=f'{viewer}:{other}:{location}'
             if key not in state['seen']:
                 state['seen'][key]={'viewer':viewer,'player':other,'location':location,'second':round(state['elapsed'],1)}
-    return state['elapsed']>=state['duration']
+    if game.realtime:field_bots(state,game)
+    return state['elapsed']>=state['duration'] or state.get('meeting',False) or game.phase=='finished'
 
 
 def finish(state, game):
+    if not state['active']:return
     state['active']=False
     game.exploration_day=game.day
     game.exploration_locations={pid:place(pos) for pid,pos in state['positions'].items()}
     for sight in state['seen'].values():
         game._emit('탐색 목격', {k:v for k,v in sight.items() if k!='viewer'}|{'day':game.day}, sight['viewer'])
-    game._emit('탐색 종료',{'day':game.day})
+    game._emit('회의 소집' if game.realtime else '탐색 종료',{'day':game.day,'reason':'신고' if state.get('meeting') else '시간 종료'})
+    if game.realtime:
+        game._emit('발견 결과',{'victims':list(state.get('bodies',{})),'day':game.day})
     game.version+=1
 
 
@@ -100,7 +105,91 @@ def observation(state, game, viewer):
     return {'day':state['day'],'width':WIDTH,'height':HEIGHT,'sight':SIGHT,
             'remaining':max(0,round(state['duration']-state['elapsed'],1)),
             'buildings':BUILDINGS,'places':[{'name':name,'x':p[0],'y':p[1]} for name,p in PLACES.items()],
+            'realtime':game.realtime,
+            'attack_wait': max(0,round(state.get('cooldowns',{}).get(viewer,8)-state['elapsed'],1)) if game.players[viewer].role=='wolf' else None,
+            'attack_targets':[p for p in game.living() if game.players[p].role!='wolf' and nearby(state,viewer,p,ATTACK_RANGE)] if game.realtime and alive and game.players[viewer].role=='wolf' and game.day>1 else [],
+            'bodies':[{'id':p,'x':state['positions'][p][0],'y':state['positions'][p][1],'reportable':nearby(state,viewer,p,REPORT_RANGE)} for p in state.get('bodies',{}) if alive and me and sees(me,state['positions'][p])],
             'self_position':list(me) if me and alive else None,
             'location':place(me) if me and alive else None,
-            'players':[{'id':pid,'x':round(pos[0],1),'y':round(pos[1],1)} for pid,pos in state['positions'].items()
+            'players':[{'id':pid,'x':round(pos[0],1),'y':round(pos[1],1),'moving':state.get('moving',{}).get(pid,False)} for pid,pos in state['positions'].items()
                        if alive and me and game.players[pid].alive and (pid==viewer or sees(me,pos))]}
+
+
+ATTACK_RANGE = 42
+REPORT_RANGE = 85
+COOLDOWN = 15
+
+
+def nearby(state, actor, target, distance):
+    a=state['positions'].get(actor);b=state['positions'].get(target)
+    return bool(a and b and math.dist(a,b)<=distance and sees(a,b))
+
+
+def act(state, game, actor, kind, target):
+    from .engine import RuleError
+    if not game.realtime or not state['active'] or state.get('meeting') or game.phase=='finished' or actor not in game.living():
+        raise RuleError('지금은 현장 행동을 할 수 없습니다')
+    if kind=='report':
+        if target not in state['bodies'] or not nearby(state,actor,target,REPORT_RANGE):
+            raise RuleError('가까이에서 보이는 시체만 신고할 수 있습니다')
+        state['meeting']=True
+        game._emit('시체 신고',{'actor':actor,'target':target,'location':place(state['positions'][target]),'day':game.day})
+    elif kind=='attack':
+        if game.players[actor].role!='wolf' or game.day==1 or target not in game.living() or game.players[target].role=='wolf':
+            raise RuleError('공격할 수 없는 대상입니다')
+        if state['elapsed']<state['cooldowns'].get(actor,8) or not nearby(state,actor,target,ATTACK_RANGE):
+            raise RuleError('공격 대기 시간 또는 거리 조건을 확인하세요')
+        state['cooldowns'][actor]=state['elapsed']+COOLDOWN
+        if target in state['shields']:
+            state['shields'].remove(target)
+            game._emit('보호 발동',{'target':target,'day':game.day},[actor,target])
+        else:
+            for viewer in game.living():
+                if viewer!=actor and sees(state['positions'][viewer],state['positions'][actor]) and sees(state['positions'][viewer],state['positions'][target]):
+                    game._emit('공격 목격',{'actor':actor,'target':target,'location':place(state['positions'][target]),'day':game.day,'second':round(state['elapsed'],1)},viewer)
+            game.players[target].alive=False
+            state['bodies'][target]={'second':round(state['elapsed'],1)}
+            game._emit('현장 공격',{'actor':actor,'target':target,'day':game.day},actor)
+            game._check_winner()
+    else: raise RuleError('지원하지 않는 현장 행동입니다')
+    game.version+=1
+
+
+def field_bots(state,game):
+    """One-second tactical policy using only visible positions and personal council/memory.
+
+    LLM council supplies an optional target; movement and immediate actions are deterministic.
+    """
+    from .engine import RuleError
+    if state['elapsed']<state.get('next_think',0):return
+    state['next_think']=state['elapsed']+1
+    for pid in list(game.living()):
+        if game.players[pid].controller!='ai':continue
+        me=state['positions'][pid]
+        visible=[p for p in game.living() if p!=pid and sees(me,state['positions'][p])]
+        bodies=[p for p in state['bodies'] if sees(me,state['positions'][p])]
+        role=game.players[pid].role
+        if bodies and role!='wolf':
+            target=min(bodies,key=lambda p:math.dist(me,state['positions'][p]))
+            if nearby(state,pid,target,REPORT_RANGE):
+                act(state,game,pid,'report',target);return
+            state['paths'][pid]=route(me,state['positions'][target]);continue
+        view=game.observation(pid)
+        enemies=[p for p in visible if p not in view['self'].get('allies',[])]
+        threats={e['data']['actor'] for e in view['events'] if e['type']=='공격 목격'} | {e['data']['target'] for e in view['events'] if e['type']=='조사' and e['data'].get('team')=='wolf'}
+        seen_threats=[p for p in visible if p in threats]
+        if role!='wolf' and seen_threats:
+            threat=state['positions'][seen_threats[0]]
+            state['paths'][pid]=route(me,PLACES[max(PLACES,key=lambda n:math.dist(PLACES[n],threat))]);continue
+        if role=='wolf' and game.day>1 and enemies:
+            preferred=game.council.get(pid,{}).get('target')
+            target=preferred if preferred in enemies else min(enemies,key=lambda p:math.dist(me,state['positions'][p]))
+            if state['elapsed']>=state['cooldowns'].get(pid,8):
+                state['paths'][pid]=route(me,state['positions'][target])
+                try:act(state,game,pid,'attack',target)
+                except RuleError:pass
+                if game.phase=='finished':return
+            else:
+                state['paths'][pid]=route(me,PLACES[max(PLACES,key=lambda n:math.dist(PLACES[n],state['positions'][target]))])
+        elif not state['paths'].get(pid):
+            state['paths'][pid]=route(me,PLACES[game.rng.choice(list(PLACES))])

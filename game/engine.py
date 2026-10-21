@@ -40,6 +40,7 @@ class Game:
         self.council = {}
         self.last_protected = {}
         self.pending_question = None
+        self.realtime = False
         self.exploration_day = 0
         self.exploration_locations = {}
         self._emit("시작", {"day": self.day})
@@ -79,7 +80,7 @@ class Game:
                     raise RuleError("잘못된 대상입니다")
                 if p.role == "doctor" and self.last_protected.get(actor) == target:
                     raise RuleError("같은 대상을 연속으로 보호할 수 없습니다")
-                if p.role == "citizen" or (p.role == "wolf" and self.day == 1):
+                if p.role == "citizen" or (p.role == "wolf" and (self.day == 1 or self.realtime)):
                     raise RuleError("현재 사용할 수 없는 능력입니다")
                 if p.role == "wolf" and self.players[target].role == "wolf":
                     raise RuleError("동료 늑대를 공격할 수 없습니다")
@@ -154,20 +155,21 @@ class Game:
             private = []
             for pid, action in self.actions.items():
                 others = [q for q, a in self.actions.items() if q != pid and a["location"] == action["location"]]
-                if others and self.exploration_day != self.day:
+                if others and self.exploration_day != self.day and not self.realtime:
                     private.append((pid, "목격", {"player": self.rng.choice(others), "location": action["location"], "day": self.day}))
                 if self.players[pid].role == "seer" and action["target"]:
                     target = action["target"]
                     private.append((pid, "조사", {"target": target, "team": "wolf" if self.players[target].role == "wolf" else "village", "day": self.day}))
                 if self.players[pid].role == "tracker" and action["target"]:
                     target = action["target"]
-                    private.append((pid, "추적", {"target": target, "location": self.actions[target]["location"], "day": self.day}))
+                    private.append((pid, "추적", {"target": target, "location": self.exploration_locations.get(target, "기록 없음") if self.realtime else self.actions[target]["location"], "day": self.day - 1 if self.realtime else self.day}))
                 if self.players[pid].role == "coroner" and action["target"]:
                     target = action["target"]
                     private.append((pid, "검시", {"target": target, "role": self.players[target].role, "day": self.day}))
             # 살아 있는 늑대 전원이 같은 대상을 선택해야 한 명만 공격한다.
             targets = [a["target"] for pid, a in self.actions.items() if self.players[pid].role == "wolf"]
             victim = targets[0] if targets and targets[0] is not None and len(set(targets)) == 1 else None
+            if self.realtime: victim = None
             protected = set()
             for pid, action in self.actions.items():
                 if self.players[pid].role == "doctor":
@@ -183,7 +185,7 @@ class Game:
             for pid, kind, data in private:
                 if self.players[pid].alive:
                     self._emit(kind, data, pid)
-            self._emit("밤 결과", {"victim": victim, "day": self.day})
+            self._emit("준비 완료" if self.realtime else "밤 결과", {"victim": victim, "day": self.day})
             self.actions = {}
             self.phase = "discussion"
             self._check_winner()
@@ -234,7 +236,7 @@ class Game:
             raise RuleError("방 참가자가 아닙니다")
         result = {"room_id": self.room_id, "phase": self.phase, "day": self.day,
                   "version": self.version, "winner": self.winner,
-                  "self": {"id": viewer, "role": self.players[viewer].role},
+                  "realtime": self.realtime, "self": {"id": viewer, "role": self.players[viewer].role},
                   "players": [{"id": p.id, "alive": p.alive, "controller": p.controller} for p in self.players.values()],
                   "events": [e for e in self.events if e["recipient"] in (None, viewer) or (isinstance(e["recipient"], list) and viewer in e["recipient"]) or self.phase == "finished"]}
         if self.exploration_day == self.day:
@@ -266,6 +268,7 @@ class Game:
         game = cls.__new__(cls)
         random_state = data.pop("random_state")
         game.__dict__.update(data)
+        game.realtime = data.get("realtime", False)
         game.last_protected = data.get("last_protected", {})
         game.pending_question = data.get("pending_question")
         game.exploration_day = data.get("exploration_day", 0)

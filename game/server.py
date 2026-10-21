@@ -50,7 +50,7 @@ class DemoClient:
         if kind == "council":
             targets = schema["properties"]["target"]["enum"]
             payload.update(target=next((t for t in targets if t), None), text="이 대상을 함께 검토합시다.")
-        if kind == "night" and view["self"]["role"] == "wolf" and view["day"] > 1:
+        if kind == "night" and view["self"]["role"] == "wolf" and view["day"] > 1 and not view.get("realtime"):
             payload["target"] = next((e["data"]["target"] for e in reversed(view["events"]) if e["type"] == "비밀 협의" and e["data"].get("target")), None)
         return payload
 
@@ -87,10 +87,10 @@ class Hub:
         self.db.execute("INSERT OR REPLACE INTO rooms VALUES (?, ?)", (room.data["id"], json.dumps(room.data, ensure_ascii=False)))
         self.db.commit()
 
-    def create(self, name, size, explore=False):
+    def create(self, name, size, explore=False, realtime=False):
         if len(self.rooms) >= 100: raise RuleError("방 한도에 도달했습니다")
         rid, token = secrets.token_hex(4), secrets.token_urlsafe(32)
-        room = Room({"id":rid, "size":size, "explore_enabled":explore, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
+        room = Room({"id":rid, "size":size, "explore_enabled":explore or realtime, "realtime":realtime, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
         self.rooms[rid] = room
         self.save(room)
         return room, token
@@ -112,8 +112,8 @@ class Hub:
 
     def queue(self, room):
         g = room.game
-        if g.phase == "night" and room.data.get("explore_enabled") and g.exploration_day != g.day:
-            room.data["exploration"] = exploration.begin(g)
+        if g.phase == ("discussion" if g.realtime else "night") and room.data.get("explore_enabled") and g.exploration_day != g.day:
+            room.data["exploration"] = exploration.begin(g, duration=60 if g.realtime else 30)
             room.intents.clear();room.move_sequences.clear();room.last_step=time.monotonic();room.last_saved_step=0.
         players = g.living()
         if g.phase == "council": players = [p for p in players if g.players[p].role == "wolf"]
@@ -136,6 +136,11 @@ class Hub:
             if g and g.phase == "discussion" and p != pid and g.players[p].controller == "ai" and g.players[p].alive and g.speeches.get(p, 0) < 2)) if allowed else []
         view["explore_enabled"] = room.data.get("explore_enabled", False)
         if g and room.data.get("exploration", {}).get("active"):
+            # Unreported deaths cannot be read from the global roster.
+            if g.realtime:
+                hidden=room.data["exploration"].get("bodies",{})
+                for player in view["players"]:
+                    if player["id"] in hidden and player["id"] != pid: player["alive"]=True
             view.update(phase="explore", active=None, can_act=False, action=None, deadline=None, busy=False,
                         exploration=exploration.observation(room.data["exploration"],g,pid))
         if g and g.phase == "finished":
@@ -229,6 +234,7 @@ class CreateBody(BaseModel):
     name: str = Field(min_length=1, max_length=20)
     size: int = Field(default=7, ge=5, le=11)
     explore: bool = False
+    realtime: bool = False
 
 
 class MoveBody(BaseModel):
@@ -237,6 +243,13 @@ class MoveBody(BaseModel):
     dy: StrictInt = Field(ge=-1,le=1)
     day: StrictInt = Field(ge=1)
     sequence: StrictInt = Field(ge=0)
+
+
+class FieldBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: str = Field(pattern="^(attack|report)$")
+    target: str = Field(min_length=1,max_length=20)
+    day: StrictInt = Field(ge=1)
 
 
 class JoinBody(BaseModel):
@@ -289,7 +302,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
     @app.post("/api/rooms")
     async def create(body:CreateBody, request:Request):
         if body.size not in Game.SIZES: raise RuleError("5·7·9·11인 중 선택하세요")
-        room, token = request.app.state.hub.create(body.name,body.size,body.explore)
+        room, token = request.app.state.hub.create(body.name,body.size,body.explore,body.realtime)
         return {"room_id":room.data["id"],"token":token}
 
     @app.post("/api/rooms/{rid}/join")
@@ -313,6 +326,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         async with room.lock:
             if pid!="p0" or room.data["status"]!="lobby": raise RuleError("방장만 대기실에서 시작할 수 있습니다")
             room.game=Game(rid,{f"p{i}":"human" if f"p{i}" in room.data["members"] else "ai" for i in range(room.data["size"])})
+            room.game.realtime=room.data.get("realtime",False)
             room.data["status"]="running";hub.queue(room);hub.save(room)
             if auto_workers: hub.launch(room)
         return hub.view(room,pid)
@@ -340,6 +354,19 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                 room.move_sequences[pid]=body.sequence
                 room.intents[pid]=(body.dx,body.dy,time.monotonic())
         return {"accepted":True}
+
+    @app.post("/api/rooms/{rid}/field-action")
+    async def field_action(rid:str,body:FieldBody,request:Request):
+        hub,room,pid=auth(request,rid)
+        async with room.lock:
+            state=room.data.get("exploration",{})
+            if room.data["status"]!="running" or not state.get("active") or state["day"]!=body.day:
+                raise RuleError("현재 탐색에서만 사용할 수 있습니다")
+            exploration.act(state,room.game,pid,body.kind,body.target)
+            if state.get("meeting") or room.game.phase=="finished":
+                exploration.finish(state,room.game);room.intents.clear();hub.queue(room)
+            hub.save(room)
+        return hub.view(room,pid)
 
     @app.post("/api/rooms/{rid}/commands")
     async def command(rid:str,body:CommandBody,request:Request):
