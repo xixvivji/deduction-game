@@ -179,8 +179,18 @@ GRAPH = build_graph()
 
 
 @traceable(name='participant_decision',run_type='chain',process_inputs=lambda d:{'actor':d.get('view',{}).get('self',{}).get('id'),'phase':d.get('view',{}).get('phase'),'policy':d.get('policy','legacy')})
-def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True, previous_beliefs=None, belief_memory=False):
+def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", discussion_quality=True, previous_beliefs=None, belief_memory=False, skip_forced=False):
     started=time.perf_counter()
+    kind, schema = action_spec(view)
+    if skip_forced and kind == 'night' and all(len(spec.get('enum', [])) == 1 for spec in schema['properties'].values()):
+        payload = {name: spec['enum'][0] for name, spec in schema['properties'].items()}
+        validate(payload, schema)
+        return {'kind': kind, 'payload': payload, 'attempts': 0, 'fallback': False,
+                'audit': {'summary': '모든 행동 필드가 단일 값으로 고정되어 모델 호출 생략',
+                          'evidence_ids': [], 'evidence': [], 'citation_access_valid': None,
+                          'semantic_support': 'not_applicable', 'policy': policy,
+                          'runtime': {'route': 'forced_action', 'model_calls_saved': 1,
+                                      'decision_seconds': time.perf_counter()-started}}}
     result = GRAPH.invoke({"view": scoped(view), "client": client, "memory_mode": memory_mode,
                            "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified","previous_beliefs":previous_beliefs or {},"belief_memory":belief_memory and policy=="verified"}, config={"recursion_limit": 20})
     outcome={key: result[key] for key in ("kind", "payload", "attempts", "fallback", "audit")}

@@ -19,7 +19,8 @@ from .ai import action_spec
 from .decision import decide
 from .memory_backend import LocalMemory
 from .mcp_memory import MCPMemory, MemoryUnavailable
-from .providers import create_client, ProviderError
+from .providers import create_client, ProviderError, PooledTransport
+from .inference_pool import InferencePool, run_blocking
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -75,18 +76,19 @@ class Room:
 
 
 class Hub:
-    def __init__(self, db_path, client_factory=None, turn_seconds=90, memory=None):
+    def __init__(self, db_path, client_factory=None, turn_seconds=90, memory=None, transport=None):
         self.memory=memory or LocalMemory()
+        self.transport=transport
         self.db = sqlite3.connect(db_path)
         self.db.execute("CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
         self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms WHERE json_extract(data, '$.status') != 'finished'")}
         self.client_factory = client_factory or self.default_client
         self.turn_seconds = turn_seconds
-        self.inference = asyncio.Semaphore(1)
+        self.inference = InferencePool(concurrency=int(os.environ.get("GAME_AI_CONCURRENCY", "2")))
 
     def default_client(self):
         if os.environ.get("GAME_PROVIDER") == "demo": return DemoClient()
-        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")))
+        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")), transport=self.transport)
 
     def save(self, room):
         room.data["game"] = room.game.snapshot() if room.game else None
@@ -226,13 +228,14 @@ class Hub:
                     await asyncio.sleep(.2)
                     continue
                 queued=time.perf_counter()
-                async with self.inference:
+                async with self.inference.slot():
                     queue_wait=time.perf_counter()-queued
-                    outcome = await asyncio.to_thread(
+                    outcome = await run_blocking(
                         decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
                         discussion_quality=not isinstance(room.client, DemoClient),
                         previous_beliefs=room.data.get("beliefs",{}).get(actor),
                         belief_memory=not isinstance(room.client, DemoClient),
+                        skip_forced=True,
                     )
                 outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
                 async with room.lock:
@@ -304,8 +307,9 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         if path != ":memory:": Path(path).parent.mkdir(parents=True,exist_ok=True)
         memory=await asyncio.to_thread(MCPMemory) if auto_workers else LocalMemory()
         hub = None
+        transport = PooledTransport()
         try:
-            hub = Hub(path,client_factory,turn_seconds,memory)
+            hub = Hub(path,client_factory,turn_seconds,memory,transport)
             app.state.hub = hub
             for room in hub.rooms.values():
                 if room.data["status"] == "running":
@@ -331,6 +335,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
                 await asyncio.gather(*tasks,return_exceptions=True)
                 hub.db.close()
             await asyncio.to_thread(memory.close)
+            transport.close()
     app = FastAPI(lifespan=lifespan)
 
     @app.exception_handler(RuleError)
