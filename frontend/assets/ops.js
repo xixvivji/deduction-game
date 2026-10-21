@@ -1,12 +1,28 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const labels={memory:'기억 검색',generate:'응답 생성',validate_evidence:'근거 검증',research:'재검색',repair:'수정 요청',fallback:'기본 행동'};
+const phaseNames={queue:'실행 대기',inference:'AI 판단 · 검색/생성/검증 포함',commit_wait:'방 잠금 대기',apply:'게임 규칙 검사·적용',bookkeeping:'이력·사용량 정리',persist:'DB 저장'};
+const actionNames={completed:'일반 행동 반영',fallback_completed:'기본 행동 반영',failed:'실패',cancelled:'취소'};
 const statusNames={complete:'완료',running:'진행 중',fallback:'기본 행동',error:'오류',rejected:'검사 미통과'};
 let selected=null,latest=null,paused=false,inflight=false;
 const fmt=(n,d=0)=>n==null?'—':Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
 function element(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e}
+function renderActions(a){
+ if(!a)return;
+ const t=a.totals,n=t.finalized||0,completed=t.completed||0;
+ const metrics=[['서버 반영 완료율',n?`${fmt(a.completed_rate*100,1)}%`:'—',`종료 ${n}건 중 저장 완료 ${completed}건 · 기본 행동 포함`],['완료 행동 지연 P95',a.recent_completed_p95_seconds==null?'—':`${fmt(a.recent_completed_p95_seconds,3)}초`,`최근 완료 ${a.recent_completed_samples}건 · P50 ${fmt(a.recent_completed_p50_seconds,3)}초`],['실패 / 취소',`${t.failed||0} / ${t.cancelled||0}`,`현재 진행 ${a.active.length}건 · 실패는 완료 지연에서 제외`],['반영 1건당 확인 토큰',fmt(a.known_tokens_per_completed_action,1),`사용량 확인 ${t.usage_known_calls||0} / ${t.api_calls||0}호출 · 미확인 사용량 제외`]];
+ $('action-cards').replaceChildren(...metrics.map(([label,value,sub])=>{const e=element('div',null,'card');e.append(element('div',label,'label'),element('strong',value),element('div',sub,'sub'));return e}));
+ $('action-counts').replaceChildren(...[`일반 행동 반영 ${t.regular_completed||0}건`,`기본 행동 반영 ${t.fallback_completed||0}건`,`수정·재시도 ${t.retries||0}회`,...a.active.slice(0,8).map(x=>`${x.id.slice(0,6)} · ${phaseNames[x.phase]} · ${fmt(x.seconds,1)}초`)].map(x=>element('span',x)));
+ const total=Object.values(a.recent_phase_seconds).reduce((x,y)=>x+y,0);
+ $('action-phases').replaceChildren(...Object.entries(phaseNames).map(([key,label])=>{const row=element('div',null,'phasebar'),bar=element('div',null,'track'),fill=element('span'),share=total?a.recent_phase_seconds[key]/total:0;fill.style.width=`${share*100}%`;bar.append(fill);row.append(element('span',label),bar,element('span',`${fmt(a.recent_phase_mean_seconds[key]==null?null:a.recent_phase_mean_seconds[key]*1000,1)} ms · ${fmt(share*100,1)}%`));return row}));
+ $('action-scope').textContent=`최근 종료 ${a.retained_actions}/${a.history_limit}건의 구간 평균·누적 시간 비중입니다. 실패·취소 포함. AI 판단 내부의 검색·생성 시간은 아래 흐름에서 확인하세요.`;
+ const rows=a.recent.map(x=>{const row=element('tr');[x.id.slice(0,6),actionNames[x.status],`${fmt(x.seconds,3)}초`,x.failure_phase?phaseNames[x.failure_phase]:'—',`${x.applied?'적용':'미적용'} / ${x.persisted?'저장':'미저장'}`].forEach(value=>row.append(element('td',value)));return row});
+ if(!rows.length){const row=element('tr'),cell=element('td','아직 완료된 서버 행동 기록이 없습니다. 게임을 진행하면 표시됩니다.');cell.colSpan=5;row.append(cell);rows.push(row)}
+ $('action-table').replaceChildren(...rows);
+}
 function render(d){
  latest=d;const t=d.totals,p=d.inference,m=d.mlflow;
+ renderActions(d.actions);
  const metrics=[['서버 상태',d.ready?'정상':'준비 중',`가동 ${fmt(d.uptime_seconds)}초 · 메모리에 있는 방 ${Object.values(d.rooms).reduce((a,b)=>a+b,0)}개`],['AI 실행 / 대기',`${p.active} / ${p.waiting}`,`동시 판단 ${p.capacity}개 · 대기 최대 ${p.max_waiters}개`],['기록된 입력 / 출력 토큰',`${fmt(t.input_tokens||0)} / ${fmt(t.output_tokens||0)}`,`사용량 확인 ${t.usage_known_calls||0} / API 호출 ${t.api_calls||0}회`],['최근 판단 지연 P95',d.recent_p95_seconds==null?'—':`${fmt(d.recent_p95_seconds,3)}초`,`최근 ${d.retained_decisions}회 · 판단 실패 ${t.failed||0}회`]];
  $('cards').replaceChildren(...metrics.map(([label,value,sub])=>{const e=element('div',null,'card');e.append(element('div',label,'label'),element('strong',value),element('div',sub,'sub'));return e}));
  $('resources').replaceChildren(...[`기본 행동 ${t.fallback||0}회`,`수정·재시도 ${t.retries||0}회`,`고정 행동 호출 생략 ${t.forced||0}회`,`프로세스 최대 메모리 ${fmt(d.peak_rss_bytes/1048576,1)} MiB`,`MCP/검색 ${d.memory.closed?'닫힘':d.memory.backend}`,`토큰 캐시 ${d.memory.token_cache_enabled?'사용':'기본 미사용'}`].map(v=>element('span',v)));

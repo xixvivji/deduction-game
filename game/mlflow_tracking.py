@@ -6,6 +6,9 @@ import threading
 import time
 from urllib.parse import urlsplit
 import httpx
+from .action_telemetry import ACTION_METRICS, DECISION_METRICS
+
+METRICS = frozenset(ACTION_METRICS + DECISION_METRICS)
 
 
 def local_uri(uri):
@@ -61,7 +64,7 @@ class RuntimeExporter:
 
     def submit(self, values):
         # Caller supplies scalar metrics. Copy to detach from game state.
-        sample={k:float(v) for k,v in values.items() if k in {'seconds','api_calls','api_errors','input_tokens','output_tokens','retries','fallback','failed','forced'} and isinstance(v,(int,float)) and math.isfinite(v)}
+        sample={k:float(v) for k,v in values.items() if k in METRICS and isinstance(v,(int,float)) and math.isfinite(v)}
         with self.lock:
             if self.stop.is_set():return
             try:self.pending.put_nowait(sample)
@@ -85,7 +88,7 @@ class RuntimeExporter:
                     try:sample=self.pending.get(timeout=.5)
                     except queue.Empty:continue
                     try:
-                        if run is None:run=client.create_run(experiment,'server-'+time.strftime('%Y%m%d-%H%M%S'),{'scope':'process lifetime; numeric only'})
+                        if run is None:run=client.create_run(experiment,'server-'+time.strftime('%Y%m%d-%H%M%S'),{'scope':'process lifetime; numeric only', 'metrics_schema':'decision-and-action-v2'})
                         client.log(run,sample,step);step+=1
                         with self.lock:self.state.update(state='ready',run_id=run,sent=self.state['sent']+1)
                     except Exception:

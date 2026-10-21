@@ -245,33 +245,8 @@ class Hub:
                 if ai_view is None:
                     await asyncio.sleep(.2)
                     continue
-                queued=time.perf_counter()
-                async with self.inference.slot():
-                    queue_wait=time.perf_counter()-queued
-                    outcome = await run_blocking(
-                        self.monitor.run, room.data["backend"], room.client, run_with_budget, self.settings.decision_seconds, decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
-                        discussion_quality=not isinstance(room.client, DemoClient),
-                        previous_beliefs=room.data.get("beliefs",{}).get(actor),
-                        belief_memory=not isinstance(room.client, DemoClient),
-                        skip_forced=True,
-                        context_budget=self.settings.context_budget,
-                        suspicion_policy=self.settings.suspicion_policy,
-                        queue_wait=queue_wait,
-                    )
-                outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
-                async with room.lock:
-                    g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
-                    if ai_view.get("question"):
-                        # Only public citations are attached to the public answer, never private audit summaries.
-                        g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
-                    room.busy = False
-                    if "belief_memory" in outcome["audit"]:
-                        room.data.setdefault("beliefs",{})[actor]=outcome.get("belief_state",outcome["audit"]["belief_memory"])
-                    room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
-                    self.collect_usage(room)
-                    room.data["index"] += 1
-                    room.data["deadline"] = time.time()+self.turn_seconds
-                    self.save(room)
+                with self.monitor.actions.track(room.data["backend"]) as action:
+                    await self.execute_ai_action(room, actor, ai_view, action)
         except asyncio.CancelledError:
             # run_blocking has drained the in-flight thread; persist its usage, but
             # never apply a cancelled action. Resume retains the consumed budget.
@@ -290,6 +265,45 @@ class Hub:
                 room.data["error"] = str(error) if isinstance(error, (ProviderError, MemoryUnavailable)) else "실행 오류가 발생했습니다. 서버 설정을 확인한 뒤 재개하세요."
                 self.collect_usage(room)
                 self.save(room)
+
+
+    async def execute_ai_action(self, room, actor, ai_view, action):
+        """Decide, validate with the game engine, then persist under the room lock."""
+        queued=time.perf_counter()
+        async with self.inference.slot():
+            queue_wait=time.perf_counter()-queued
+            action.enter("inference")
+            outcome = await run_blocking(
+                self.monitor.run, room.data["backend"], room.client, run_with_budget, self.settings.decision_seconds, decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
+                discussion_quality=not isinstance(room.client, DemoClient),
+                previous_beliefs=room.data.get("beliefs",{}).get(actor),
+                belief_memory=not isinstance(room.client, DemoClient),
+                skip_forced=True,
+                context_budget=self.settings.context_budget,
+                suspicion_policy=self.settings.suspicion_policy,
+                queue_wait=queue_wait, action_id=action.id,
+            )
+        outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
+        action.enter("commit_wait")
+        async with room.lock:
+            action.enter("apply")
+            g = room.game
+            g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
+            action.mark_applied()
+            action.enter("bookkeeping")
+            if ai_view.get("question"):
+                # Only public citations are attached to the public answer, never private audit summaries.
+                g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
+            room.busy = False
+            if "belief_memory" in outcome["audit"]:
+                room.data.setdefault("beliefs",{})[actor]=outcome.get("belief_state",outcome["audit"]["belief_memory"])
+            room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
+            self.collect_usage(room)
+            room.data["index"] += 1
+            room.data["deadline"] = time.time()+self.turn_seconds
+            action.enter("persist")
+            self.save(room)
+            action.mark_persisted()
 
 
 class CreateBody(BaseModel):

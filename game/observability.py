@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from uuid import uuid4
+from .action_telemetry import ActionMonitor, DECISION_METRICS
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.config import set_config_context
 
@@ -51,6 +52,7 @@ class Monitor:
         self.started=time.time(); self.clock=time.monotonic()
         self.lock=threading.Lock(); self.active={}; self.recent=deque(maxlen=history_limit)
         self.totals=Counter(); self.node_totals=Counter(); self.exporter=exporter
+        self.actions=ActionMonitor(self._export, history_limit)
 
     def stage(self, trace_id, node, status, seconds=None):
         with self.lock:
@@ -65,8 +67,8 @@ class Monitor:
                         stage.update(status=status,seconds=round(seconds,4));break
                 self.node_totals[node]+=1
 
-    def run(self, backend, client, function, *args, queue_wait=0., **kwargs):
-        trace_id=uuid4().hex[:12]; started=time.perf_counter()
+    def run(self, backend, client, function, *args, queue_wait=0., action_id=None, **kwargs):
+        trace_id=action_id or uuid4().hex[:12]; started=time.perf_counter()
         backend=backend if backend in ('openai','gemini','ollama','demo') else 'other'
         before=len(getattr(client,'metrics',[]))
         trace={'id':trace_id,'backend':backend,'started_at':time.time(),'status':'running','current_node':'starting','stages':[]}
@@ -103,8 +105,12 @@ class Monitor:
             self.recent.appendleft(trace); self.totals['decisions']+=1
             for key in ('api_calls','api_errors','input_tokens','output_tokens','usage_known_calls','retries','fallback','failed','forced'):
                 self.totals[key]+=summary[key]
+        if not self.actions.record_decision(trace_id, summary):
+            self._export({k:float(summary[k]) for k in DECISION_METRICS})
+
+    def _export(self, values):
         if self.exporter:
-            try:self.exporter.submit({k:float(summary[k]) for k in ('seconds','api_calls','api_errors','input_tokens','output_tokens','retries','fallback','failed','forced')})
+            try:self.exporter.submit(values)
             except Exception:pass  # Telemetry must not alter a completed game decision.
 
     def snapshot(self):
@@ -119,5 +125,5 @@ class Monitor:
                 'totals':totals,'nodes':nodes,'active':active,'recent':recent[:30],
                 'recent_p50_seconds':times[len(times)//2] if times else None,
                 'recent_p95_seconds':times[max(0,math.ceil(len(times)*.95)-1)] if times else None,
-                'graph':{'nodes':NODES,'edges':EDGES},
+                'graph':{'nodes':NODES,'edges':EDGES},'actions':self.actions.snapshot(),
                 'mlflow':self.exporter.snapshot() if self.exporter else {'state':'disabled'}}
