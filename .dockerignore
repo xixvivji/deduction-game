@@ -18,9 +18,15 @@ game/**/*.pyc
 !frontend/assets/**
 !reports/
 !reports/claim-guard-reviewed-v2.json
+!reports/reliability*.json
 !tools/
 !tools/container_entrypoint.py
 !tools/log_evaluation_mlflow.py
+!tools/run_checks.py
+!tools/reliability_probe.py
+!.github/
+!.github/workflows/
+!.github/workflows/quality.yml
 !tests/
 !tests/**
 tests/**/__pycache__/

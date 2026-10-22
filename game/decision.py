@@ -1,6 +1,8 @@
 """관측 → 기억 검색 → 생성 → 검증 → 제한 재시도/기본 행동의 LangGraph."""
 import time
 import copy
+import hashlib
+import json
 import re
 import random
 from typing import TypedDict
@@ -47,6 +49,10 @@ class DecisionState(TypedDict, total=False):
     context_budget: object
     context_history: list
     suspicion_policy: object
+    searched_queries: list[str]
+    failed_states: list[str]
+    repeated_failure: bool
+    research_history: list[dict]
 
 
 @traceable(name="memory_selection",run_type="retriever")
@@ -67,7 +73,7 @@ def select(state):
     schema["required"] += ["decision_summary", "evidence_ids"]
     if state.get("policy")=="verified":
         schema["properties"].update(claim_schema(view));schema["required"]+=list(claim_schema(view))
-    return {"context_history":[budget_stats], "selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"fact_retries":0,"quality_history":[],"beliefs":ledger,"retry_delay":0.,"retry_wait_seconds":0.}
+    return {"searched_queries":[], "failed_states":[], "repeated_failure":False, "research_history":[], "context_history":[budget_stats], "selected": view, "kind": kind, "schema": schema, "attempts": 0, "error": "", "fallback": False, "research_rounds":0,"verification_history":[],"quality_retries":0,"fact_retries":0,"quality_history":[],"beliefs":ledger,"retry_delay":0.,"retry_wait_seconds":0.}
 
 
 @traceable(name='model_decision',run_type='llm')
@@ -130,22 +136,45 @@ def validate_evidence(state):
     history=state.get('quality_history',[])+([quality] if state.get('discussion_quality') and state['kind']=='speak' else [])
     audit['discussion_quality']=quality
     error=result['reason'] if not result['ok'] else discussion.feedback(quality)
-    return {'verification':result,'verification_history':state['verification_history']+[result],
+    key = failure_key(state, result)
+    failed = state.get('failed_states', [])
+    return {'repeated_failure': not result['ok'] and key in failed,
+            'failed_states': failed + ([key] if not result['ok'] else []),
+            'verification':result,'verification_history':state['verification_history']+[result],
             'audit':audit,'payload':payload,'error':error,'quality':quality,'quality_history':history}
 
+
+
+def fingerprint(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def research_query(state):
+    claim = state['claim']
+    return ' '.join(str(claim.get(k) or '') for k in ('claim_subject','claim_type','claim_value'))+' 조사 공격 목격 방문 장소'
+
+
+def failure_key(state, verification):
+    # A changed citation or new evidence must still get a chance to correct the answer.
+    return fingerprint({'claim':state.get('claim'), 'ids':sorted(state['audit']['evidence_ids']),
+                        'target':state['payload'].get('target'), 'status':verification['status'],
+                        'events':sorted(state['selected']['events'], key=lambda e:e['sequence'])})
 
 
 @traceable(name='evidence_research',run_type='retriever')
 def research(state):
     remaining()
-    claim=state['claim']
-    query=' '.join(str(claim.get(k) or '') for k in ('claim_subject','claim_type','claim_value'))+' 조사 공격 목격 방문 장소'
+    query = research_query(state)
+    previous = {fingerprint(e) for e in state['selected']['events']}
     selected=state['memory'].search(state['view'],query=query,expanded=True)
     if state.get('discussion_quality') and state['kind']=='speak':
         discussion.attach_context(selected,state['view'])
     if state.get('belief_memory'):beliefs.attach(selected,state['beliefs'],state['view'])
     selected, budget_stats = state['context_budget'].apply(selected)
+    added = len({fingerprint(e) for e in selected['events']} - previous)
     return {'selected':selected,'research_rounds':state['research_rounds']+1,
+            'searched_queries':state.get('searched_queries',[])+[fingerprint(query)],
+            'research_history':state.get('research_history',[])+[{'new_events':added}],
             'context_history':state['context_history']+[budget_stats]}
 
 
@@ -153,13 +182,19 @@ def after_validation(state):
     if state['verification']['ok']:
         if state.get('quality',{}).get('ok',True):return 'done'
         return 'repair' if state.get('quality_retries',0)<1 and state['attempts']<3 else 'fallback'
-    if state['verification']['status']=='untyped_fact':
-        return 'repair' if state.get('fact_retries',0)<1 and state['attempts']<3 else 'fallback'
-    return 'research' if state['research_rounds']<2 and state['attempts']<3 else 'fallback'
+    if state['attempts'] >= 3:return 'fallback'
+    status = state['verification']['status']
+    # Wording / belief contradictions need correction, not a wider permission scope.
+    if status in ('untyped_fact','belief_conflict','invalid_citation') or not state['claim'].get('claim_subject'):
+        return 'repair' if state.get('fact_retries',0)<1 else 'fallback'
+    if fingerprint(research_query(state)) in state.get('searched_queries',[]):
+        if state.get('repeated_failure'):return 'fallback'
+        return 'repair' if state.get('fact_retries',0)<1 else 'fallback'
+    return 'research' if state['research_rounds']<2 else 'fallback'
 
 
 def repair(state):
-    if state['verification'].get('status')=='untyped_fact':
+    if not state['verification']['ok']:
         return {'fact_retries':state.get('fact_retries',0)+1}
     return {'quality_retries':state.get('quality_retries',0)+1}
 
@@ -217,6 +252,10 @@ def decide(view, client, memory_mode="retrieved", memory=None, policy="legacy", 
                            "memory":memory or LocalMemory(),"policy":policy,"discussion_quality":discussion_quality and policy=="verified","previous_beliefs":previous_beliefs or {},"belief_memory":belief_memory and policy=="verified"}, config={"recursion_limit": 20})
     outcome={key: result[key] for key in ("kind", "payload", "attempts", "fallback", "audit")}
     outcome['audit'].update(retry_wait_seconds=result['retry_wait_seconds'],policy=policy,research_rounds=result['research_rounds'],
+                            research_history=result['research_history'],
+                            stopped_repeated_failure=bool(result.get('repeated_failure') and result['fallback']
+                                and result['attempts'] < 3
+                                and fingerprint(research_query(result)) in result['searched_queries']),
                             verification_history=result['verification_history'],fact_retries=result['fact_retries'],quality_retries=result['quality_retries'],quality_history=result['quality_history'],discussion_quality_enabled=discussion_quality and policy=='verified',memory_backend=(memory or LocalMemory()).name)
     if result.get("belief_memory"):
         outcome["belief_state"]=beliefs.record_suspicion(result["view"],result["beliefs"],outcome["audit"],outcome["fallback"],suspicion_policy=suspicion_policy)

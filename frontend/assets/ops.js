@@ -20,12 +20,36 @@ function renderActions(a){
  if(!rows.length){const row=element('tr'),cell=element('td','아직 완료된 서버 행동 기록이 없습니다. 게임을 진행하면 표시됩니다.');cell.colSpan=5;row.append(cell);rows.push(row)}
  $('action-table').replaceChildren(...rows);
 }
+function comparisonCard(label,before,after,note){
+ const card=element('div',null,'comparison-card'),nums=element('div',null,'numbers');
+ nums.append(element('strong',before,'before'),element('span','→','arrow'),element('strong',after));
+ card.append(element('div',label,'label'),nums,element('div',note,'sub'));return card;
+}
+function renderReliability(data){
+ const replay=data?.scripted,live=data?.live,q=data?.quality;
+ $('reliability-cards').replaceChildren();$('live-eval-table').replaceChildren();$('mcp-evaluation').replaceChildren();$('quality-checks').replaceChildren();
+ if(replay?.status==='measured'){
+  const b=replay.before,a=replay.after;
+  $('reliability-scope').textContent=`개발용 합성 상황 8개 × ${replay.config.repeats}회 · 고정 응답 ${a.runs}회 · ${new Date(replay.created_at).toLocaleString('ko-KR')} · ${replay.source_current?'현재 AI 코드와 일치':'주의: 측정 후 AI 코드 변경됨'}. 독립 평가셋·게임 승률이 아닙니다.`;
+  $('reliability-cards').append(comparisonCard('재검색 횟수',b.research_calls,a.research_calls,'고정 응답 · 같은 입력'),comparisonCard('모의 모델 생성 횟수',b.model_calls,a.model_calls,'외부 API 호출 수와 구분'),comparisonCard('기대 행동 일치',`${b.correct}/${b.runs}`,`${a.correct}/${a.runs}`,`정상 응답 오차단 ${b.false_blocks}→${a.false_blocks} · 기권 대체 ${b.fallbacks}→${a.fallbacks}`));
+  const m=replay.mcp;
+  if(m?.status==='measured')$('mcp-evaluation').append(...[`관찰 창 ${m.window_seconds}초`,`복구 성공 ${m.before.recovered}/${m.before.trials} → ${m.after.recovered}/${m.after.trials}`,`성공 시험 평균 복구 ${m.before.mean_recovery_seconds==null?'미복구':fmt(m.before.mean_recovery_seconds,3)+'초'} → ${m.after.mean_recovery_seconds==null?'미복구':fmt(m.after.mean_recovery_seconds,3)+'초'}`,`실패한 검색 요청 ${m.before.failed_requests} → ${m.after.failed_requests}`].map(x=>element('span',x)));
+ }else $('reliability-scope').textContent=replay?.status==='incomparable'?'입력 또는 설정이 달라 비교할 수 없습니다.':'전후 평가가 아직 완료되지 않았습니다.';
+ if(live?.status==='measured'){
+  const b=live.before,a=live.after;
+  $('live-scope').textContent=`${live.config.provider} / ${live.config.model} · 조건별 ${a.runs}건 · ${live.source_current?'현재 AI 코드와 일치':'측정 후 AI 코드 변경됨'} · 시점을 나눠 실행한 소규모 표본으로 모델 출력·서버 부하가 달라질 수 있습니다. 인과적 성능 향상이나 요금 절감으로 단정하지 않습니다. 발언 오차단율·게임 승률은 이 시험의 평가 대상이 아닙니다.`;
+  const metrics=[['전체 판단 평균 시간',b.mean_ms,a.mean_ms,'ms'],['전체 판단 P95',b.p95_ms,a.p95_ms,'ms'],['모델 생성 시도',b.model_calls,a.model_calls,'회'],['재검색',b.research_calls,a.research_calls,'회'],['확인된 입력 토큰',b.input_tokens,a.input_tokens,''],['확인된 출력 토큰',b.output_tokens,a.output_tokens,''],['기대 투표·기권 일치',`${b.correct}/${b.runs}`,`${a.correct}/${a.runs}`,''],['근거가 있는 투표의 기본 행동 대체',b.false_blocks,a.false_blocks,'건'],['기본 행동 대체',b.fallbacks,a.fallbacks,'건'],['인용 접근 범위 위반',b.scope_violations,a.scope_violations,'건'],['사용량 미확인 호출',b.usage_unknown_calls,a.usage_unknown_calls,'회']];
+  $('live-eval-table').append(...metrics.map(([name,before,after,unit])=>{const row=element('tr');[name,...[before,after].map(x=>typeof x==='string'?x:`${fmt(x,2)} ${unit}`)].forEach(x=>row.append(element('td',x)));return row}));
+ }else $('live-scope').textContent=live?.status==='incomparable'?'입력·모델·설정이 달라 비교할 수 없습니다.':'실제 API 전후 비교는 아직 측정하지 않았습니다.';
+ $('quality-scope').textContent=q?.status==='not_measured'||!q?'검사 결과 미등록':`${q.source==='github_actions'?'GitHub Actions 실행':'로컬에서 CI와 같은 검사 실행'} · ${new Date(q.created_at).toLocaleString('ko-KR')} · ${q.status==='passed'?'전체 통과':'실패 있음'} · ${q.source_current?'검사한 코드와 일치':'검사 이후 코드 변경됨'}. 로컬 결과는 원격 CI 통과를 뜻하지 않습니다.`;
+ for(const check of q?.checks||[])$('quality-checks').append(element('span',`${check.passed?'✓':'✕'} ${check.name} · ${check.tests==null?'문법 확인':check.tests+'개'} · ${fmt(check.seconds,2)}초`));
+}
 function render(d){
  latest=d;const t=d.totals,p=d.inference,m=d.mlflow;
- renderActions(d.actions);
+ renderActions(d.actions);renderReliability(d.reliability);
  const metrics=[['서버 상태',d.ready?'정상':'준비 중',`가동 ${fmt(d.uptime_seconds)}초 · 메모리에 있는 방 ${Object.values(d.rooms).reduce((a,b)=>a+b,0)}개`],['AI 실행 / 대기',`${p.active} / ${p.waiting}`,`동시 판단 ${p.capacity}개 · 대기 최대 ${p.max_waiters}개`],['기록된 입력 / 출력 토큰',`${fmt(t.input_tokens||0)} / ${fmt(t.output_tokens||0)}`,`사용량 확인 ${t.usage_known_calls||0} / API 호출 ${t.api_calls||0}회`],['최근 판단 지연 P95',d.recent_p95_seconds==null?'—':`${fmt(d.recent_p95_seconds,3)}초`,`최근 ${d.retained_decisions}회 · 판단 실패 ${t.failed||0}회`]];
  $('cards').replaceChildren(...metrics.map(([label,value,sub])=>{const e=element('div',null,'card');e.append(element('div',label,'label'),element('strong',value),element('div',sub,'sub'));return e}));
- $('resources').replaceChildren(...[`기본 행동 ${t.fallback||0}회`,`수정·재시도 ${t.retries||0}회`,`고정 행동 호출 생략 ${t.forced||0}회`,`프로세스 최대 메모리 ${fmt(d.peak_rss_bytes/1048576,1)} MiB`,`MCP/검색 ${d.memory.closed?'닫힘':d.memory.backend}`,`토큰 캐시 ${d.memory.token_cache_enabled?'사용':'기본 미사용'}`].map(v=>element('span',v)));
+ $('resources').replaceChildren(...[`기본 행동 ${t.fallback||0}회`,`수정·재시도 ${t.retries||0}회`,`고정 행동 호출 생략 ${t.forced||0}회`,`프로세스 최대 메모리 ${fmt(d.peak_rss_bytes/1048576,1)} MiB`,`MCP/검색 ${d.memory.connection?.state||(d.memory.closed?'닫힘':d.memory.backend)}`,`MCP 재연결 ${d.memory.connection?.reconnect_attempts||0}회 · 복구 ${d.memory.connection?.recoveries||0}회`,`MCP 대기 ${d.memory.connection?.pending||0}/${d.memory.connection?.capacity||0} · 최근 복구 ${fmt(d.memory.connection?.last_recovery_seconds,3)}초`,`재검색 ${t.research_calls||0}회 · 반복 실패 중단 ${t.repeated_failure_stops||0}회`,`토큰 캐시 ${d.memory.token_cache_enabled?'사용':'기본 미사용'}`].map(v=>element('span',v)));
  $('runtime-title').textContent='서비스 운영 · '+d.source;
  $('retention').textContent=`최근 ${d.retained_decisions}/${d.history_limit}회 보관`;
  const traces=[...d.active,...d.recent];if(!traces.some(x=>x.id===selected))selected=traces[0]?.id||null;

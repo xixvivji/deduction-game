@@ -64,14 +64,18 @@ def install(app, root):
         if app.state.mlflow_public_uri:
             result["mlflow"]["public_uri"] = app.state.mlflow_public_uri
         statuses=Counter(r.data['status'] for r in hub.rooms.values())
-        result.update(ready=bool(request.app.state.ready),rooms=dict(statuses),
+        result.update(ready=bool(request.app.state.ready) and getattr(hub.memory,'healthy',True),rooms=dict(statuses),
                       inference={'active':hub.inference.active,'waiting':hub.inference.waiters,'capacity':hub.settings.concurrency,'max_waiters':hub.inference.max_waiters},
                       memory={'backend':hub.memory.name,'closed':bool(getattr(hub.memory,'closed',False)),
-                              'token_cache_enabled':os.environ.get('GAME_MEMORY_TOKEN_CACHE','false').lower()=='true'},
+                              'token_cache_enabled':os.environ.get('GAME_MEMORY_TOKEN_CACHE','false').lower()=='true',
+                              'connection':hub.memory.snapshot() if hasattr(hub.memory,'snapshot') else None},
                       limits={'decision_seconds':hub.settings.decision_seconds,'context_bytes':hub.settings.context_budget.max_bytes},
                       evaluation=app.state.ops_evaluation,
+                      reliability=app.state.ops_reliability.snapshot(),
                       tracing={'langsmith_configured':os.environ.get('LANGSMITH_TRACING','').lower()=='true'})
         from fastapi.responses import JSONResponse
         return JSONResponse(result, headers={"Cache-Control": "no-store"})
 
     app.state.ops_evaluation=evaluation(root)
+    from .evaluation_reports import ReportStore
+    app.state.ops_reliability=ReportStore(root)

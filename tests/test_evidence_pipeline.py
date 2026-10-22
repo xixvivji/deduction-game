@@ -47,7 +47,8 @@ class EvidenceTests(unittest.TestCase):
         model=Scripted()
         with patch('game.decision.time.sleep'):
             result=decide(g.observation('p0'),model,policy='verified')
-        self.assertEqual(model.calls,3);self.assertEqual(result['audit']['research_rounds'],2)
+        self.assertEqual(model.calls,2);self.assertEqual(result['audit']['research_rounds'],1)
+        self.assertTrue(result['audit']['stopped_repeated_failure'])
         self.assertTrue(result['fallback']);self.assertIsNone(result['payload']['target'])
 
     def test_research_repairs_evidence(self):
