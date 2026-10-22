@@ -2,11 +2,11 @@
 
 사람과 AI가 시민 진영·늑대 진영으로 나뉘어 마을을 탐색하고, 각자 가진 기억을 바탕으로 토론·투표하는 사회적 추리 게임입니다. 실시간 이동과 건물 출입, 차례제 회의를 지원합니다. AI는 자신의 역할과 관측 범위 안에서 기억을 검색하고, 근거 검증을 거쳐 행동합니다.
 
-**G075 김지원 · 미니프로젝트 과제 2 · v0.2.0**
+**G075 김지원 · 미니프로젝트 과제 2 · v0.2.1**
 
 [![자동 품질 검사](https://github.com/xixvivji/deduction-game/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/xixvivji/deduction-game/actions/workflows/quality.yml)
 
-[빠른 실행](#quickstart) · [AI 구조와 기술 요소](#architecture) · [검증과 전후 비교](#validation) · [문제 해결](#troubleshooting) · [문서·발표자료](#documents) · [버전 기록](CHANGELOG.md)
+[빠른 실행](#quickstart) · [AI 구조와 기술 요소](#architecture) · [검증과 전후 비교](#validation) · [문제 해결](#troubleshooting) · [발표 PDF](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf) · [문서·발표자료](#documents) · [버전 기록](CHANGELOG.md)
 
 ![실시간 마을 탐색 화면](reports/assets/visual-after-map.jpg)
 
@@ -363,7 +363,7 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 
 게임 실행 후 운영 모니터([가상환경 8200](http://127.0.0.1:8200/ops) / [Docker 8300](http://127.0.0.1:8300/ops))에서 실제 실행 단계·대기열·토큰과 고정 입력 평가를 확인할 수 있습니다. 가상환경에서 MLflow는 선택 설치이며, Docker Compose에는 별도 컨테이너로 포함됩니다. AI Flow는 이 페이지의 실행 흐름 표시를 뜻하며 Apache Airflow는 사용하지 않습니다. LangSmith는 상세 실행 추적, MLflow는 실험·숫자 지표 보관을 담당합니다. [실행·지표 범위·한계](docs/operations.md)와 [최신 5분 발표 대본](docs/presentation-script.txt)을 참고하세요.
 
-발표: [최신 PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx) — 본 발표 8장(5분), 부록 5장.
+발표: [PDF 바로 보기](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf) · [편집용 PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx) — 본 발표 8장(5분), 부록 5장. PDF는 기존 PPT 13장을 같은 내용으로 변환했습니다. 자료의 테스트 수와 캡처는 발표자료 작성 당시 기준이며, 최신 233개 검사·MCP 복구 실측은 [최신 평가](docs/ai-reliability.md)를 참고하세요.
 
 ### AI 판단 이후의 실제 행동 완료 추적
 
@@ -412,5 +412,5 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 | 자원 재사용·운영·복구 | [AI 실행 효율](docs/ai-runtime-optimization.md), [운영 화면·MLflow](docs/operations.md), [최신 재검색·MCP 복구](docs/ai-reliability.md) |
 | 다른 PC에서 실행·백업 | [Docker 운영](docs/docker.md) |
 | 실험 근거 | [보고서 목록](reports/README.md), [실제 OpenAI 게임](reports/docker-openai-live-v1.md) |
-| 발표 | [PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx), [5분 대본](docs/presentation-script.txt) |
+| 발표 | [PDF](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf), [PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx), [5분 대본](docs/presentation-script.txt) |
 | 화면·버전 변경 | [그래픽 정리](docs/visual-design.md), [버전 기록](CHANGELOG.md) |
