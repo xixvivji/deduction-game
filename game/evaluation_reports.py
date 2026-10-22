@@ -46,7 +46,7 @@ def comparison(root, prefix):
 
 def quality_fingerprint(root):
     paths = sorted([*root.glob('game/*.py'), *root.glob('tests/*.py'), *root.glob('tests/*.cjs'),
-                    *root.glob('frontend/assets/*.js'), *root.glob('tools/run_checks.py'),
+                    *root.glob('frontend/assets/*.js'), *root.glob('tools/run_checks.py'), *root.glob('tools/reliability_probe.py'),
                     *root.glob('.github/workflows/*.yml')])
     hasher = hashlib.sha256()
     for p in paths:

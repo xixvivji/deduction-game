@@ -134,12 +134,24 @@ def decisions(repeats=5, live=False):
 
 def owned_child():
     """Only kill a direct child of this evaluation process with the exact MCP module argv."""
-    listing = subprocess.check_output(['ps', '-eo', 'pid=,ppid=,args='], text=True)
     candidates = []
-    for line in listing.splitlines():
-        parts = line.strip().split(None, 2)
-        if len(parts) == 3 and int(parts[1]) == os.getpid() and parts[2].split()[-2:] == ['-m', 'game.mcp_memory_server']:
-            candidates.append(int(parts[0]))
+    if Path('/proc/self/status').exists():
+        # Slim Linux containers do not ship ps; inspect only direct children via procfs.
+        for process in Path('/proc').iterdir():
+            if not process.name.isdecimal(): continue
+            try:
+                status = (process/'status').read_text()
+                parent = int(next(line.split()[1] for line in status.splitlines() if line.startswith('PPid:')))
+                if parent != os.getpid(): continue
+                argv = (process/'cmdline').read_bytes().decode().strip('\0').split('\0')
+                if argv[-2:] == ['-m','game.mcp_memory_server']: candidates.append(int(process.name))
+            except (OSError, ValueError, StopIteration): continue
+    else:
+        listing = subprocess.check_output(['ps', '-eo', 'pid=,ppid=,args='], text=True)
+        for line in listing.splitlines():
+            parts = line.strip().split(None, 2)
+            if len(parts) == 3 and int(parts[1]) == os.getpid() and parts[2].split()[-2:] == ['-m', 'game.mcp_memory_server']:
+                candidates.append(int(parts[0]))
     if len(candidates) != 1: raise RuntimeError('Evaluation MCP child not uniquely identified')
     return candidates[0]
 

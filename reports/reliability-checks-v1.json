@@ -1,27 +1,27 @@
 {
   "schema_version": 1,
   "status": "passed",
-  "created_at": "2026-10-22T02:58:24.304532+00:00",
+  "created_at": "2026-10-22T03:05:07.499012+00:00",
   "source": "local",
-  "source_sha256": "f000026f8f0067b2cc090e365f5ab6f99b1ad25f18a126f55ca889e61d7879e2",
+  "source_sha256": "8e5d4e72520eac8b5edf09d7a67aeb6c45c3a823d5cc70998eacbde6dc3ebc53",
   "checks": [
     {
       "name": "Python 단위·통합 검사",
       "passed": true,
       "tests": 233,
-      "seconds": 31.288
+      "seconds": 16.084
     },
     {
       "name": "JavaScript 이동·화면 검사",
       "passed": true,
       "tests": 6,
-      "seconds": 0.133
+      "seconds": 0.126
     },
     {
       "name": "운영 화면 문법 검사",
       "passed": true,
       "tests": null,
-      "seconds": 0.02
+      "seconds": 0.019
     }
   ],
   "github_run_url": null
