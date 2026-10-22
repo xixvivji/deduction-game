@@ -1,0 +1,275 @@
+{
+  "generated_at": "2026-10-21T12:16:40.120532+00:00",
+  "generator_model": "gpt-4.1-mini",
+  "baseline_commit": "63fa502",
+  "construction_usage": {
+    "input_tokens": 1821,
+    "input_tokens_details": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0
+    },
+    "output_tokens": 609,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 2430
+  },
+  "protocol": "Generated before implementation; contents withheld until code freeze. Labels prescribed by scenario, then reviewed after freezing. Not externally human-labeled or statistically representative.",
+  "cases": [
+    {
+      "id": "self_doctor",
+      "allow": true,
+      "role": "doctor",
+      "description": "실제 의사가 자기 직업을 1인칭으로 밝히는 문장",
+      "events": [],
+      "evidence_ids": [],
+      "text": "저는 본 게임에서 의사 역할을 맡았습니다. 위급한 상황에 항상 준비돼 있습니다."
+    },
+    {
+      "id": "self_tracker",
+      "allow": true,
+      "role": "tracker",
+      "description": "실제 추적자가 자신의 역할을 1인칭으로 소개하는 문장",
+      "events": [],
+      "evidence_ids": [],
+      "text": "제가 추적자입니다. 어제 밤에 여러 명을 확인해봤습니다."
+    },
+    {
+      "id": "self_team",
+      "allow": true,
+      "role": "seer",
+      "description": "실제 조사자가 자신이 시민 진영임을 말하는 문장. 일반 시민 직업이라고 하지 않기",
+      "events": [],
+      "evidence_ids": [],
+      "text": "저는 이 마을의 세력 편에 서 있는 조사자입니다. 시민들의 안전이 최우선입니다."
+    },
+    {
+      "id": "conditional_attack",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 p1을 공격한 것이 사실이라면 확인이 필요하다는 가정문",
+      "events": [],
+      "evidence_ids": [],
+      "text": "만약 p2가 p1을 공격했다면, 그에 대한 증거가 꼭 필요합니다."
+    },
+    {
+      "id": "conditional_role",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 늑대라면 어떤 근거가 필요한지 말하는 가정문",
+      "events": [],
+      "evidence_ids": [],
+      "text": "만약 p2가 늑대라면, 그 행동과 위치에 대한 구체적인 증거가 제시돼야 합니다."
+    },
+    {
+      "id": "question_attack",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 p1을 해쳤는지를 직접 묻는 질문",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2, 당신이 정말로 p1을 공격했나요? 사실을 밝혀주시길 바랍니다."
+    },
+    {
+      "id": "question_location",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 시장에 있었는지 직접 묻는 질문",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2, 어젯밤에 시장에 가 있었나요? 그 위치가 중요합니다."
+    },
+    {
+      "id": "uncertain_role",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 늑대인지 알지 못한다는 불확실성 표현",
+      "events": [],
+      "evidence_ids": [],
+      "text": "솔직히 말해서 p2가 늑대인지 확실히 판단하기 어렵습니다."
+    },
+    {
+      "id": "uncertain_attack",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2가 p1을 공격했는지 확인할 수 없다는 말",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2가 p1을 공격했는지 여부는 아직 확인할 수 없습니다."
+    },
+    {
+      "id": "faithful_quote",
+      "allow": true,
+      "role": "doctor",
+      "description": "p3의 공개 발언을 그대로 큰따옴표로 인용하여 전달. 인용문 전체는 정확히 p1은 늑대입니다. 이고 본인은 동의하거나 단정하지 않음",
+      "events": [
+        {
+          "sequence": 2,
+          "type": "발언",
+          "recipient": null,
+          "data": {
+            "actor": "p3",
+            "text": "p1은 늑대입니다.",
+            "day": 2
+          }
+        }
+      ],
+      "evidence_ids": [
+        2
+      ],
+      "text": "p3의 발언을 말씀드리면, \"p1은 늑대입니다.\""
+    },
+    {
+      "id": "plain_question",
+      "allow": true,
+      "role": "doctor",
+      "description": "p2에게 가장 중요한 판단 근거가 무엇인지 물어보기",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2, 이번 판에서 가장 신뢰할 만한 판단 근거가 무엇이라고 생각합니까?"
+    },
+    {
+      "id": "wolf_strategy",
+      "allow": true,
+      "role": "wolf",
+      "description": "늑대가 p2를 범인이라고 거짓으로 단정하는 게임 전략 발언",
+      "events": [],
+      "evidence_ids": [],
+      "text": "나는 분명히 말하는데, p2가 범인이다. 그를 의심하는 게 옳아."
+    },
+    {
+      "id": "wrong_self",
+      "allow": false,
+      "role": "doctor",
+      "description": "실제 의사가 자신이 조사자라고 1인칭으로 거짓 단정",
+      "events": [],
+      "evidence_ids": [],
+      "text": "나는 조사자야. 어제 밤에 여러 명을 확인했는데 확실해."
+    },
+    {
+      "id": "other_role",
+      "allow": false,
+      "role": "doctor",
+      "description": "근거 없이 p2가 늑대라고 단정하는 구어체",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2, 분명히 늑대야. 아무도 반박 못할 거야."
+    },
+    {
+      "id": "other_innocence",
+      "allow": false,
+      "role": "doctor",
+      "description": "근거 없이 p2는 절대로 늑대가 아니라고 확정",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2가 절대로 늑대일 리 없어. 걱정할 필요 없어."
+    },
+    {
+      "id": "colloquial_kill",
+      "allow": false,
+      "role": "doctor",
+      "description": "p2가 p1을 죽이는 것을 본 적 없는데 직접 보았다고 단정하는 구어체",
+      "events": [],
+      "evidence_ids": [],
+      "text": "어젯밤에 내가 직접 봤는데 p2가 p1을 죽였어. 확실해."
+    },
+    {
+      "id": "attack_assertion",
+      "allow": false,
+      "role": "doctor",
+      "description": "증거 없이 p2가 p1을 공격했다고 확정",
+      "events": [],
+      "evidence_ids": [],
+      "text": "증거는 없어도 p2가 p1을 공격한 게 분명하다."
+    },
+    {
+      "id": "visit_assertion",
+      "allow": false,
+      "role": "doctor",
+      "description": "근거 없이 p2가 부두에 있었다고 확정",
+      "events": [],
+      "evidence_ids": [],
+      "text": "분명히 p2는 어젯밤 부두에 있었어. 부인할 수 없어."
+    },
+    {
+      "id": "false_quote",
+      "allow": false,
+      "role": "doctor",
+      "description": "p4가 p1은 늑대입니다. 라고 말했다고 큰따옴표 인용. 실제 기록의 화자는 p3이고 p4 발언 기록은 없음",
+      "events": [
+        {
+          "sequence": 2,
+          "type": "발언",
+          "recipient": null,
+          "data": {
+            "actor": "p3",
+            "text": "p1은 늑대입니다.",
+            "day": 2
+          }
+        }
+      ],
+      "evidence_ids": [
+        2
+      ],
+      "text": "p4가 \"p1은 늑대입니다.\"라고 말했다고 들었어."
+    },
+    {
+      "id": "quote_endorsement",
+      "allow": false,
+      "role": "doctor",
+      "description": "p3의 실제 발언 p1은 늑대입니다. 를 큰따옴표로 인용한 다음, 그러므로 p1은 분명 늑대라고 스스로 단정",
+      "events": [
+        {
+          "sequence": 2,
+          "type": "발언",
+          "recipient": null,
+          "data": {
+            "actor": "p3",
+            "text": "p1은 늑대입니다.",
+            "day": 2
+          }
+        }
+      ],
+      "evidence_ids": [
+        2
+      ],
+      "text": "p3가 \"p1은 늑대입니다.\"라고 했으니, 확실히 p1은 늑대야."
+    },
+    {
+      "id": "mixed_question",
+      "allow": false,
+      "role": "doctor",
+      "description": "p2에게 근거가 무엇인지 묻는 질문 다음에 p1은 늑대라고 근거 없이 단정. 두 문장",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2, 네가 가진 근거가 무엇인지 말해봐. 그리고 p1은 늑대야."
+    },
+    {
+      "id": "mixed_condition",
+      "allow": false,
+      "role": "doctor",
+      "description": "p2가 공격했다면 확인하자는 가정 다음에 p1이 p4를 죽였다는 단정. 두 문장",
+      "events": [],
+      "evidence_ids": [],
+      "text": "만약 p2가 공격했다면, p1이 p4를 죽였다는 것도 사실일 거야."
+    },
+    {
+      "id": "mixed_self",
+      "allow": false,
+      "role": "doctor",
+      "description": "실제로 자기 역할이 의사임을 밝힌 다음 p2가 범인이라고 단정. 두 문장",
+      "events": [],
+      "evidence_ids": [],
+      "text": "나는 의사야. 그리고 p2가 범인임에 틀림없어."
+    },
+    {
+      "id": "negative_attack_fact",
+      "allow": false,
+      "role": "doctor",
+      "description": "근거 없이 p2는 p1을 공격하지 않았다고 확정. 단순히 모른다는 표현은 금지",
+      "events": [],
+      "evidence_ids": [],
+      "text": "p2는 절대 p1을 공격하지 않았어. 확실히 아니야."
+    }
+  ]
+}

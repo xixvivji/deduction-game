@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-22T02:57:04.025840+00:00",
+  "revision": "d873595f481725afb19970f07974d6efa52377b5",
+  "source_sha256": {
+    "game/decision.py": "df50813d9a6eead108b6fbd22bd7ea100d6794bdf803b333afc58eca9adba915",
+    "game/mcp_memory.py": "24b6fd0a6f724b2f6462b93efd220e958ed03419d30e373a63503041dd858096",
+    "tools/reliability_probe.py": "b3bbef6aed23b9590ccdd61b66ae5f3a5714df4970399d0b2f7662cee8a6f609"
+  },
+  "decisions": {
+    "config": {
+      "kind": "live",
+      "repeats": 1,
+      "policy": "verified",
+      "discussion_quality": false,
+      "backend": "mcp",
+      "provider": "openai",
+      "model": "gpt-4.1-mini"
+    },
+    "fixture_sha256": "d7cc75999d8a2623db4771e5508b8ba796618f8e6ea28ab9637152964c0924cf",
+    "rows": [
+      {
+        "case": "investigation",
+        "repeat": 0,
+        "seconds": 0.910124,
+        "attempts": 1,
+        "research_calls": 0,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 2008,
+        "output_tokens": 60,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "attack",
+        "repeat": 0,
+        "seconds": 2.798487,
+        "attempts": 2,
+        "research_calls": 1,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 4279,
+        "output_tokens": 139,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "rumor",
+        "repeat": 0,
+        "seconds": 2.247725,
+        "attempts": 2,
+        "research_calls": 1,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 4291,
+        "output_tokens": 142,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "location",
+        "repeat": 0,
+        "seconds": 1.460264,
+        "attempts": 1,
+        "research_calls": 0,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 2017,
+        "output_tokens": 68,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "private_other",
+        "repeat": 0,
+        "seconds": 1.445517,
+        "attempts": 1,
+        "research_calls": 0,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 2018,
+        "output_tokens": 56,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "contradiction",
+        "repeat": 0,
+        "seconds": 1.244831,
+        "attempts": 1,
+        "research_calls": 0,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 2014,
+        "output_tokens": 87,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "village",
+        "repeat": 0,
+        "seconds": 2.407934,
+        "attempts": 2,
+        "research_calls": 1,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 4322,
+        "output_tokens": 158,
+        "usage_unknown_calls": 0
+      },
+      {
+        "case": "no_evidence",
+        "repeat": 0,
+        "seconds": 1.27271,
+        "attempts": 1,
+        "research_calls": 0,
+        "fallback": false,
+        "correct": true,
+        "false_block": false,
+        "scope_violations": 0,
+        "input_tokens": 2019,
+        "output_tokens": 52,
+        "usage_unknown_calls": 0
+      }
+    ],
+    "summary": {
+      "runs": 8,
+      "correct": 8,
+      "model_calls": 11,
+      "research_calls": 3,
+      "fallbacks": 0,
+      "false_blocks": 0,
+      "scope_violations": 0,
+      "mean_ms": 1723.449,
+      "p95_ms": 2798.487,
+      "input_tokens": 22968,
+      "output_tokens": 762,
+      "usage_unknown_calls": 0
+    }
+  },
+  "scope": "Synthetic development fixtures, not independent holdout or game win rate. Scripted latency is local graph overhead, not API latency. Live calls are stochastic and time-separated. Tokens are returned API usage only, never billing estimates. Fault recovery measured by active probes on an isolated MCP subprocess; no production games touched."
+}

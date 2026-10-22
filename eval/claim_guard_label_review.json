@@ -1,0 +1,36 @@
+{
+  "reviewed_at": "2026-10-21T12:26:48.796868+00:00",
+  "reviewer": "implementing_assistant",
+  "protocol": "Content review after code freeze and first execution. No label edits or guard changes. All generated cases preserved; nonconforming/ambiguous inputs excluded with reasons. This is not independent human annotation.",
+  "reviewed_ids": [
+    "self_doctor",
+    "self_tracker",
+    "self_team",
+    "conditional_attack",
+    "conditional_role",
+    "question_attack",
+    "question_location",
+    "uncertain_role",
+    "uncertain_attack",
+    "faithful_quote",
+    "plain_question",
+    "wolf_strategy",
+    "wrong_self",
+    "other_role",
+    "other_innocence",
+    "colloquial_kill",
+    "attack_assertion",
+    "visit_assertion",
+    "false_quote",
+    "quote_endorsement",
+    "mixed_question",
+    "mixed_condition",
+    "mixed_self",
+    "negative_attack_fact"
+  ],
+  "excluded": {
+    "self_tracker": "자기 역할 소개 뒤 어젯밤 여러 명을 확인했다는 추가 과거 행동을 생성했으나 입력에는 그 근거가 없다. 정상 자기소개만 시험하려던 사전 조건과 달라 제외한다.",
+    "mixed_condition": "독립된 두 문장을 요구했으나 하나의 if 조건문 안에 두 주장을 넣었다. 뒷부분이 독립 단정인지 조건의 결과인지 모호하므로 제외한다."
+  },
+  "label_changes": []
+}

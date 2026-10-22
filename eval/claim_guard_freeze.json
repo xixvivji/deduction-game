@@ -1,0 +1,13 @@
+{
+  "frozen_at": "2026-10-21T12:23:31.615685+00:00",
+  "baseline_commit": "63fa502",
+  "heldout_sha256": "5185a56cccad0d3bdc55cf708822197c947c257eb146e14000a1d6d555466c86",
+  "source_sha256": {
+    "game/claim_guard.py": "d1546521987b3cb857ef8a5e5ed475852b12880675951d3850879c9e577735af",
+    "game/evidence.py": "3dd54c0c33a0cff6669cc2d700e0c9597667bb5308f98c06343a013318923dbf",
+    "game/decision.py": "8f64422b90b6173c3930b580764cdc21c8dd9d4b47df41af2def7d39c5959be3",
+    "game/ai.py": "8f0c75d2f27d1a7e1cc297070e5ee3cfa450c34d1df4710253d8be4e9e7561d2"
+  },
+  "development_tests_passed": 186,
+  "protocol": "Generated utterances not read during implementation. First heldout evaluation follows this freeze; report misses without tuning."
+}

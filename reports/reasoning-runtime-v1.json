@@ -1,0 +1,41 @@
+{
+  "baseline_commit": "b01e3f8",
+  "source_sha256": "f31771a5285087d446040bb5093fcefa8aa5497d2ccad7a75e28192df9f85e51",
+  "scope": "Eight known synthetic regression tests on old Git snapshot versus current code. Not a holdout or LLM accuracy benchmark. Context test uses a configured 12000-byte observation budget, not the 32768 default. No API calls, RSS or token savings measured.",
+  "regressions": {
+    "before": {
+      "cases": 8,
+      "passed": 1,
+      "failed": [
+        "test_idle_speech_does_not_support_suspicion",
+        "test_missing_coroner_role_is_not_a_village_confirmation",
+        "test_none_cannot_hide_a_role_assertion",
+        "test_none_cannot_hide_an_attack_assertion",
+        "test_old_suspicion_expires_by_evidence_day_not_repeated_claim_day",
+        "test_speech_does_not_poison_private_ledger",
+        "test_stale_sighting_cannot_support_a_current_suspicion"
+      ],
+      "errors": []
+    },
+    "after": {
+      "cases": 8,
+      "passed": 8,
+      "failed": [],
+      "errors": []
+    }
+  },
+  "context": {
+    "limit_bytes": 12000,
+    "before_bytes": 14881,
+    "after_bytes": 11023,
+    "dropped_events": 3,
+    "protected_events": 1,
+    "selected_events": 9,
+    "before_events": 12,
+    "required_preserved": true,
+    "records_unchanged": true,
+    "budget_overhead_mean_ms": 0.132,
+    "budget_overhead_p95_ms": 0.152,
+    "iterations": 50
+  }
+}
