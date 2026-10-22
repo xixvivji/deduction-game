@@ -4,7 +4,7 @@ const labels={memory:'기억 검색',generate:'응답 생성',validate_evidence:
 const phaseNames={queue:'실행 대기',inference:'AI 판단 · 검색/생성/검증 포함',commit_wait:'방 잠금 대기',apply:'게임 규칙 검사·적용',bookkeeping:'이력·사용량 정리',persist:'DB 저장'};
 const actionNames={completed:'일반 행동 반영',fallback_completed:'기본 행동 반영',failed:'실패',cancelled:'취소'};
 const statusNames={complete:'완료',running:'진행 중',fallback:'기본 행동',error:'오류',rejected:'검사 미통과'};
-let selected=null,latest=null,paused=false,inflight=false;
+let selected=null,latest=null,paused=false,inflight=false,opsToken='';
 const fmt=(n,d=0)=>n==null?'—':Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
 function element(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e}
 function renderActions(a){
@@ -38,9 +38,10 @@ function render(d){
  const b=d.evaluation.before,a=d.evaluation.after;$('eval-scope').textContent=`문장 범위 검증 v2 · 같은 합성 입력 ${d.evaluation.cases}건 · ${d.evaluation.scope}`;
  $('comparison').replaceChildren(...[['올바른 판정',b.correct,a.correct,'22개 중 기대한 허용·차단과 일치'],['근거 없는 단정을 놓침',b.missed_blocks,a.missed_blocks,'차단해야 하는 11건 기준 · 적을수록 좋음'],['정상 발언을 잘못 차단',b.false_blocks,a.false_blocks,'허용해야 하는 11건 기준 · 개선되지 않음']].map(([label,before,after,sub])=>{const card=element('div',null,'comparison-card'),nums=element('div',null,'numbers');nums.append(element('strong',before,'before'),element('span','→','arrow'),element('strong',after));card.append(element('div',label,'label'),nums,element('div',sub,'sub'));return card}));
  $('eval-table').replaceChildren(...[['정상 발언 수정 재시도 합계',`${b.allowed_replay_retries}회`,`${a.allowed_replay_retries}회`],['근거 없는 단정 수정 재시도 합계',`${b.unsupported_replay_retries}회`,`${a.unsupported_replay_retries}회`],['검사 시간 · 사례별 중앙값 평균',`${b.mean_case_median_check_ms} ms`,`${a.mean_case_median_check_ms} ms`]].map(values=>{const row=element('tr');values.forEach(v=>row.append(element('td',v)));return row}));
- const link=$('mlflow-link');link.hidden=!m.uri;if(m.uri)link.href=m.uri+(m.experiment_id?`/#/experiments/${m.experiment_id}/runs?workflowType=machine_learning`:'');
+ const link=$('mlflow-link');link.hidden=!m.uri;if(m.uri)link.href=(m.public_uri||m.uri)+(m.experiment_id?`/#/experiments/${m.experiment_id}/runs?workflowType=machine_learning`:'');
  $('integrations').textContent=`MLflow ${m.state} · 전송 ${m.sent||0}건 · 대기 ${m.pending||0}/${m.capacity||0}건 · 실패 ${m.failures||0}회 · 누락 ${m.dropped||0}건 / LangSmith ${d.tracing.langsmith_configured?'추적 설정 켜짐':'추적 설정 꺼짐'}`;
 }
-async function refresh(){if(inflight)return;inflight=true;try{const r=await fetch('/api/ops',{cache:'no-store',signal:AbortSignal.timeout(5000)});if(!r.ok)throw Error(r.status);render(await r.json());$('connection').textContent='● 서버 연결됨';$('connection').className='';$('updated').textContent=`갱신 ${new Date().toLocaleTimeString('ko-KR')}`;}catch(e){$('connection').textContent='연결 실패 · 기존 수치는 마지막 수신 값';$('connection').className='off';}finally{inflight=false}}
+async function refresh(){if(inflight)return;inflight=true;try{const r=await fetch('/api/ops',{cache:'no-store',headers:opsToken?{'X-Ops-Token':opsToken}:{},signal:AbortSignal.timeout(5000)});if(r.status===401){$('ops-auth').hidden=false;$('connection').textContent='운영 접근 키 입력 필요';if(opsToken)$('auth-error').textContent='접근 키를 확인해 주세요.';return}if(!r.ok)throw Error(r.status);$('ops-auth').hidden=true;$('auth-error').textContent='';render(await r.json());$('connection').textContent='● 서버 연결됨';$('connection').className='';$('updated').textContent=`갱신 ${new Date().toLocaleTimeString('ko-KR')}`;}catch(e){$('connection').textContent='연결 실패 · 기존 수치는 마지막 수신 값';$('connection').className='off';}finally{inflight=false}}
+$('ops-auth').onsubmit=e=>{e.preventDefault();opsToken=$('ops-token').value.trim();$('ops-token').value='';refresh()};
 $('refresh').onclick=refresh;$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'자동 갱신 멈춤':'자동 갱신 중';if(!paused)refresh()};
-setInterval(()=>{if(!paused&&!document.hidden)refresh()},3000);refresh();
+setInterval(()=>{if(!paused&&!document.hidden&&$('ops-auth').hidden)refresh()},3000);refresh();

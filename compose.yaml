@@ -1,0 +1,65 @@
+name: night-testimony
+services:
+  game:
+    image: night-testimony-game:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      GAME_PROVIDER: ${GAME_PROVIDER:-openai}
+      GAME_MODEL: ${GAME_MODEL:-gpt-4.1-mini}
+      GAME_DB: /app/runtime/games.db
+      GAME_OPS_TOKEN_FILE: /app/runtime/ops-token
+      GAME_MLFLOW_ALLOW_COMPOSE: "true"
+      GAME_MLFLOW_TRACKING_URI: http://mlflow:5500
+      GAME_MLFLOW_PUBLIC_URI: http://127.0.0.1:${DOCKER_MLFLOW_PORT:-5600}
+    ports:
+      - "127.0.0.1:${DOCKER_GAME_PORT:-8300}:8200"
+    volumes:
+      - game-data:/app/runtime
+    networks: [backend]
+    depends_on:
+      mlflow:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8200/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: ${DOCKER_STOP_GRACE:-150s}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  mlflow:
+    image: night-testimony-mlflow:local
+    build:
+      context: .
+      dockerfile: docker/mlflow.Dockerfile
+    init: true
+    ports:
+      - "127.0.0.1:${DOCKER_MLFLOW_PORT:-5600}:5500"
+    volumes:
+      - mlflow-data:/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5500/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    stop_grace_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+networks:
+  backend:
+volumes:
+  game-data:
+  mlflow-data:

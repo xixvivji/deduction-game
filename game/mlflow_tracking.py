@@ -1,6 +1,7 @@
 """Optional local MLflow REST sink. Bounded queue, short timeouts, numeric data only."""
 import copy
 import math
+import os
 import queue
 import threading
 import time
@@ -11,7 +12,10 @@ from .action_telemetry import ACTION_METRICS, DECISION_METRICS
 METRICS = frozenset(ACTION_METRICS + DECISION_METRICS)
 
 
-def local_uri(uri):
+def local_uri(uri, *, allow_compose=False):
+    # Opt-in, fixed internal service endpoint; arbitrary remote destinations remain rejected.
+    if allow_compose and uri.rstrip('/') == 'http://mlflow:5500':
+        return 'http://mlflow:5500'
     p=urlsplit(uri)
     if p.scheme!='http' or p.hostname not in ('127.0.0.1','localhost','::1') or p.username or p.password or p.query or p.fragment or p.path not in ('','/'):
         raise ValueError('MLflow URI는 인증정보 없는 로컬 HTTP 주소여야 합니다')
@@ -20,7 +24,7 @@ def local_uri(uri):
 
 class TrackingClient:
     def __init__(self, uri):
-        self.uri=local_uri(uri);self.http=httpx.Client(base_url=self.uri,timeout=1.5,trust_env=False,follow_redirects=False)
+        self.uri=local_uri(uri, allow_compose=os.environ.get("GAME_MLFLOW_ALLOW_COMPOSE")=="true");self.http=httpx.Client(base_url=self.uri,timeout=1.5,trust_env=False,follow_redirects=False)
 
     def call(self, route, body=None, params=None):
         r=self.http.request('POST' if body is not None else 'GET','/api/2.0/mlflow/'+route,json=body,params=params)
@@ -57,7 +61,7 @@ class TrackingClient:
 class RuntimeExporter:
     def __init__(self, uri, max_pending=64, client_factory=TrackingClient, experiment_name="night-testimony-runtime"):
         self.experiment_name=experiment_name
-        self.uri=local_uri(uri);self.factory=client_factory;self.pending=queue.Queue(maxsize=max_pending)
+        self.uri=local_uri(uri, allow_compose=os.environ.get("GAME_MLFLOW_ALLOW_COMPOSE")=="true");self.factory=client_factory;self.pending=queue.Queue(maxsize=max_pending)
         self.stop=threading.Event();self.lock=threading.Lock()
         self.state={'state':'connecting','sent':0,'dropped':0,'failures':0,'uri':self.uri,'experiment_id':None,'run_id':None,'checked_at':None}
         self.worker=threading.Thread(target=self._work,name='mlflow-metrics',daemon=True);self.worker.start()
