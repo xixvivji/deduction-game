@@ -19,7 +19,14 @@ from .ai import action_spec
 from .decision import decide
 from .memory_backend import LocalMemory
 from .mcp_memory import MCPMemory, MemoryUnavailable
-from .providers import create_client, ProviderError
+from .providers import create_client, ProviderError, PooledTransport
+from .inference_pool import InferencePool, run_blocking, create_blocking_resource
+from .time_budget import run_with_budget
+from .circuit_breaker import CircuitTransport
+from .runtime_settings import RuntimeSettings
+from .observability import Monitor
+from .mlflow_tracking import RuntimeExporter
+from .operations import install as install_operations
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -70,21 +77,30 @@ class Room:
         self.move_sequences = {}
         self.last_step = time.monotonic()
         self.last_saved_step = 0.
+        self.last_access = time.monotonic()
+        self.connections = 0
 
 
 class Hub:
-    def __init__(self, db_path, client_factory=None, turn_seconds=90, memory=None):
+    def __init__(self, db_path, client_factory=None, turn_seconds=90, memory=None, transport=None, settings=None):
+        self.settings = settings or RuntimeSettings.from_env()
         self.memory=memory or LocalMemory()
+        self.transport=transport
         self.db = sqlite3.connect(db_path)
-        self.db.execute("CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
-        self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms")}
+        try:
+            self.db.execute("CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
+            self.rooms = {key: Room(json.loads(data)) for key,data in self.db.execute("SELECT id,data FROM rooms WHERE json_extract(data, '$.status') != 'finished'")}
+        except BaseException:
+            self.db.close()
+            raise
         self.client_factory = client_factory or self.default_client
         self.turn_seconds = turn_seconds
-        self.inference = asyncio.Semaphore(1)
+        self.inference = InferencePool(concurrency=self.settings.concurrency)
+        self.monitor = Monitor()
 
     def default_client(self):
         if os.environ.get("GAME_PROVIDER") == "demo": return DemoClient()
-        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")))
+        return create_client(os.environ.get("GAME_PROVIDER", "ollama"), os.environ.get("GAME_MODEL"), max_calls=int(os.environ.get("GAME_MAX_CALLS", "300")), transport=self.transport, fast_model=os.environ.get("GAME_FAST_MODEL"), quality_model=os.environ.get("GAME_QUALITY_MODEL"))
 
     def save(self, room):
         room.data["game"] = room.game.snapshot() if room.game else None
@@ -92,7 +108,8 @@ class Hub:
         self.db.commit()
 
     def create(self, name, size, explore=False, realtime=False):
-        if len(self.rooms) >= 100: raise RuleError("방 한도에 도달했습니다")
+        self.evict_finished()
+        if sum(r.data["status"] != "finished" for r in self.rooms.values()) >= 100: raise RuleError("방 한도에 도달했습니다")
         rid, token = secrets.token_hex(4), secrets.token_urlsafe(32)
         room = Room({"id":rid, "size":size, "explore_enabled":explore or realtime, "realtime":realtime, "members":{"p0":{"name":name,"token_hash":digest(token)}}, "status":"lobby", "queue":[], "index":0, "deadline":None, "error":None, "history":[], "metrics":[], "calls":0, "backend":os.environ.get("GAME_PROVIDER", "ollama"), "model":os.environ.get("GAME_MODEL", "qwen3:4b-instruct"), "memory":"retrieved"})
         self.rooms[rid] = room
@@ -100,8 +117,25 @@ class Hub:
         return room, token
 
     def room(self, rid):
-        if rid not in self.rooms: raise HTTPException(404, "방을 찾을 수 없습니다")
+        if rid not in self.rooms:
+            row = self.db.execute("SELECT data FROM rooms WHERE id=?", (rid,)).fetchone()
+            if row is None: raise HTTPException(404, "방을 찾을 수 없습니다")
+            self.rooms[rid] = Room(json.loads(row[0]))
+        self.rooms[rid].last_access = time.monotonic()
         return self.rooms[rid]
+
+    def evict_finished(self, idle_seconds=60):
+        now = time.monotonic()
+        removed = 0
+        for rid, room in list(self.rooms.items()):
+            if (room.data["status"] == "finished" and not room.connections
+                    and not room.busy and not room.lock.locked()
+                    and (room.task is None or room.task.done())
+                    and now - room.last_access >= idle_seconds):
+                self.save(room)
+                del self.rooms[rid]
+                removed += 1
+        return removed
 
     def authenticate(self, room, token):
         hashed = digest(token)
@@ -151,6 +185,12 @@ class Hub:
             view["report"] = {"decisions":room.data["history"], "metrics":room.data["metrics"]}
         return view
 
+    def collect_usage(self, room):
+        if room.client is not None:
+            room.data["metrics"].extend(room.client.metrics)
+            room.client.metrics.clear()
+            room.data["calls"] = getattr(room.client,"calls",room.data["calls"])
+
     def launch(self, room):
         if not room.task or room.task.done(): room.task = asyncio.create_task(self.run(room))
 
@@ -158,8 +198,8 @@ class Hub:
         try:
             if room.client is None:
                 room.client = self.client_factory()
-                room.client.check() if isinstance(room.client, DemoClient) else await asyncio.to_thread(room.client.check)
                 if hasattr(room.client, "calls"): room.client.calls = room.data["calls"]
+                room.client.check() if isinstance(room.client, DemoClient) else await run_blocking(room.client.check)
                 source = getattr(room.client, "client", room.client)
                 room.data["backend"] = "demo" if isinstance(source, DemoClient) else getattr(source, "provider", "ollama")
                 room.data["model"] = getattr(source, "model", "규칙 봇")
@@ -205,40 +245,65 @@ class Hub:
                 if ai_view is None:
                     await asyncio.sleep(.2)
                     continue
-                async with self.inference:
-                    outcome = await asyncio.to_thread(
-                        decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
-                        discussion_quality=not isinstance(room.client, DemoClient),
-                        previous_beliefs=room.data.get("beliefs",{}).get(actor),
-                        belief_memory=not isinstance(room.client, DemoClient),
-                    )
-                async with room.lock:
-                    g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
-                    if ai_view.get("question"):
-                        # Only public citations are attached to the public answer, never private audit summaries.
-                        g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
-                    room.busy = False
-                    if "belief_memory" in outcome["audit"]:
-                        room.data.setdefault("beliefs",{})[actor]=outcome["audit"]["belief_memory"]
-                    room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
-                    room.data["metrics"].extend(room.client.metrics)
-                    room.client.metrics.clear()
-                    room.data["calls"] = getattr(room.client,"calls",room.data["calls"])
-                    room.data["index"] += 1
-                    room.data["deadline"] = time.time()+self.turn_seconds
-                    self.save(room)
+                with self.monitor.actions.track(room.data["backend"]) as action:
+                    await self.execute_ai_action(room, actor, ai_view, action)
         except asyncio.CancelledError:
+            # run_blocking has drained the in-flight thread; persist its usage, but
+            # never apply a cancelled action. Resume retains the consumed budget.
+            async with room.lock:
+                room.busy = False
+                if room.data["status"] == "running":
+                    room.data["status"] = "paused"
+                    room.data["error"] = "서버 작업이 중단되었습니다. 방장이 재개할 수 있습니다."
+                self.collect_usage(room)
+                self.save(room)
             raise
         except Exception as error:
             async with room.lock:
                 room.busy = False
                 room.data["status"] = "paused"
                 room.data["error"] = str(error) if isinstance(error, (ProviderError, MemoryUnavailable)) else "실행 오류가 발생했습니다. 서버 설정을 확인한 뒤 재개하세요."
-                if room.client:
-                    room.data["metrics"].extend(room.client.metrics)
-                    room.client.metrics.clear()
-                    room.data["calls"] = getattr(room.client,"calls",room.data["calls"])
+                self.collect_usage(room)
                 self.save(room)
+
+
+    async def execute_ai_action(self, room, actor, ai_view, action):
+        """Decide, validate with the game engine, then persist under the room lock."""
+        queued=time.perf_counter()
+        async with self.inference.slot():
+            queue_wait=time.perf_counter()-queued
+            action.enter("inference")
+            outcome = await run_blocking(
+                self.monitor.run, room.data["backend"], room.client, run_with_budget, self.settings.decision_seconds, decide, ai_view, room.client, room.data["memory"], self.memory, "verified",
+                discussion_quality=not isinstance(room.client, DemoClient),
+                previous_beliefs=room.data.get("beliefs",{}).get(actor),
+                belief_memory=not isinstance(room.client, DemoClient),
+                skip_forced=True,
+                context_budget=self.settings.context_budget,
+                suspicion_policy=self.settings.suspicion_policy,
+                queue_wait=queue_wait, action_id=action.id,
+            )
+        outcome["audit"].setdefault("runtime",{})["queue_wait_seconds"]=queue_wait
+        action.enter("commit_wait")
+        async with room.lock:
+            action.enter("apply")
+            g = room.game
+            g.submit(actor, str(uuid4()), ai_view["version"], outcome["kind"], **outcome["payload"])
+            action.mark_applied()
+            action.enter("bookkeeping")
+            if ai_view.get("question"):
+                # Only public citations are attached to the public answer, never private audit summaries.
+                g.events[-1]["data"]["evidence_ids"] = public_citations(ai_view, outcome["audit"]["evidence_ids"])
+            room.busy = False
+            if "belief_memory" in outcome["audit"]:
+                room.data.setdefault("beliefs",{})[actor]=outcome.get("belief_state",outcome["audit"]["belief_memory"])
+            room.data["history"].append({"actor":actor,"phase":ai_view["phase"],"day":ai_view["day"],"attempts":outcome["attempts"],"fallback":outcome["fallback"],"action":outcome["payload"],"audit":outcome["audit"]})
+            self.collect_usage(room)
+            room.data["index"] += 1
+            room.data["deadline"] = time.time()+self.turn_seconds
+            action.enter("persist")
+            self.save(room)
+            action.mark_persisted()
 
 
 class CreateBody(BaseModel):
@@ -277,27 +342,55 @@ class CommandBody(BaseModel):
 def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=True):
     @asynccontextmanager
     async def lifespan(app):
+        app.state.ready = False
+        settings = RuntimeSettings.from_env()
         path = db_path or os.environ.get("GAME_DB", str(ROOT/"runtime"/"games.db"))
         if path != ":memory:": Path(path).parent.mkdir(parents=True,exist_ok=True)
-        memory=await asyncio.to_thread(MCPMemory) if auto_workers else LocalMemory()
-        hub = None
+        memory = transport = hub = exporter = None
         try:
-            hub = Hub(path,client_factory,turn_seconds,memory)
+            memory=await create_blocking_resource(MCPMemory) if auto_workers else LocalMemory()
+            transport = CircuitTransport(PooledTransport())
+            hub = Hub(path,client_factory,turn_seconds,memory,transport,settings)
             app.state.hub = hub
+            if auto_workers and os.environ.get("GAME_MLFLOW_TRACKING_URI"):
+                exporter = RuntimeExporter(os.environ["GAME_MLFLOW_TRACKING_URI"])
+                hub.monitor.exporter = exporter
             for room in hub.rooms.values():
                 if room.data["status"] == "running":
                     room.data["status"] = "paused"
                     room.data["error"] = "서버가 재시작되었습니다. 방장이 재개할 수 있습니다."
                     hub.save(room)
-            yield
+            async def cleanup():
+                while True:
+                    await asyncio.sleep(30)
+                    hub.evict_finished()
+            cleanup_task = asyncio.create_task(cleanup())
+            app.state.ready=True
+            try:
+                yield
+            finally:
+                cleanup_task.cancel()
+                await asyncio.gather(cleanup_task, return_exceptions=True)
         finally:
-            if hub is not None:
-                tasks = [r.task for r in hub.rooms.values() if r.task and not r.task.done()]
-                for task in tasks: task.cancel()
-                await asyncio.gather(*tasks,return_exceptions=True)
-                hub.db.close()
-            await asyncio.to_thread(memory.close)
+            app.state.ready=False
+            try:
+                if hub is not None:
+                    tasks = [r.task for r in hub.rooms.values() if r.task and not r.task.done()]
+                    for task in tasks: task.cancel()
+                    try:
+                        await asyncio.gather(*tasks,return_exceptions=True)
+                    finally:
+                        hub.db.close()
+            finally:
+                try:
+                    if memory is not None: await asyncio.to_thread(memory.close)
+                finally:
+                    try:
+                        if transport is not None: transport.close()
+                    finally:
+                        if exporter is not None: await asyncio.to_thread(exporter.close)
     app = FastAPI(lifespan=lifespan)
+    install_operations(app, ROOT)
 
     @app.exception_handler(RuleError)
     async def rule_error(request, error):
@@ -310,6 +403,19 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         bearer = request.headers.get("authorization", "")
         pid = hub.authenticate(room,bearer.removeprefix("Bearer "))
         return hub,room,pid
+
+    @app.get("/health/live")
+    async def live():
+        return {"status":"alive"}
+
+    @app.get("/health/ready")
+    async def ready(request:Request):
+        hub=getattr(request.app.state,'hub',None)
+        if not getattr(request.app.state,'ready',False) or hub is None or getattr(hub.memory,'closed',False):
+            raise HTTPException(503,'not ready')
+        try:hub.db.execute('SELECT 1').fetchone()
+        except Exception:raise HTTPException(503,'not ready') from None
+        return {"status":"ready"}
 
     @app.get("/")
     async def index(): return FileResponse(ROOT/"frontend"/"index.html")
@@ -414,17 +520,24 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
         if origin and origin.split("://",1)[-1]!=ws.headers.get("host"):
             await ws.close(code=1008);return
         await ws.accept()
+        connected_room = None
         try:
             data=await asyncio.wait_for(ws.receive_json(),timeout=5)
             if not isinstance(data, dict):
                 await ws.close(code=1008);return
             hub=ws.app.state.hub;room=hub.room(rid);pid=hub.authenticate(room,str(data.get("token","")))
+            room.connections += 1
+            connected_room = room
             while True:
                 await ws.send_json(hub.view(room,pid))
                 await asyncio.sleep(.1 if room.data.get("exploration",{}).get("active") else .5)
         except (WebSocketDisconnect, HTTPException, asyncio.TimeoutError, ValueError, RuntimeError, OSError):
             try: await ws.close(code=1008)
             except RuntimeError: pass
+        finally:
+            if connected_room is not None:
+                connected_room.connections -= 1
+                connected_room.last_access = time.monotonic()
     app.mount("/assets",StaticFiles(directory=ROOT/"frontend"/"assets"),name="assets")
     return app
 

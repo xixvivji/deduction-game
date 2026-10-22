@@ -1,0 +1,88 @@
+{
+  "provider": "openai",
+  "model": "gpt-4.1-mini",
+  "source_sha256": "f31771a5285087d446040bb5093fcefa8aa5497d2ccad7a75e28192df9f85e51",
+  "scope": "Six hand-authored synthetic functional cases once each, plus one identical long-context vote with two byte budgets. Current pipeline only; no old-code live comparison, independent judge, held-out evaluation, win-rate or billing claim. Unknown usage remains null.",
+  "cases": [
+    {
+      "case": "idle_speech",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.479,
+      "input_tokens": 1957,
+      "output_tokens": 43,
+      "context_bytes": 2214
+    },
+    {
+      "case": "old_sighting",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.121,
+      "input_tokens": 2120,
+      "output_tokens": 51,
+      "context_bytes": 2762
+    },
+    {
+      "case": "confirmed_wolf",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.129,
+      "input_tokens": 2054,
+      "output_tokens": 54,
+      "context_bytes": 2464
+    },
+    {
+      "case": "retracted_village",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.161,
+      "input_tokens": 2149,
+      "output_tokens": 71,
+      "context_bytes": 2761
+    },
+    {
+      "case": "reported_accusation",
+      "correct": true,
+      "fallback": false,
+      "attempts": 3,
+      "seconds": 31.831,
+      "input_tokens": 5954,
+      "output_tokens": 220,
+      "context_bytes": 2250
+    },
+    {
+      "case": "dated_location",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.513,
+      "input_tokens": 2499,
+      "output_tokens": 72,
+      "context_bytes": 2753
+    },
+    {
+      "case": "long_unbounded",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.378,
+      "input_tokens": 5551,
+      "output_tokens": 56,
+      "context_bytes": 16642
+    },
+    {
+      "case": "long_bounded",
+      "correct": true,
+      "fallback": false,
+      "attempts": 1,
+      "seconds": 1.319,
+      "input_tokens": 4279,
+      "output_tokens": 58,
+      "context_bytes": 11481
+    }
+  ]
+}

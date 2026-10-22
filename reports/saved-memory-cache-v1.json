@@ -1,0 +1,37 @@
+{
+  "scope": "Local completed-game final observations, repeated retrieval queries; not historical decision replay, live LLM latency, token cost or quality evaluation. Six alternating-order paired trials; aggregate only.",
+  "games": 4,
+  "observations": 26,
+  "queries_per_trial": 130,
+  "selected_events_equal": true,
+  "uncached_mean_ms": 1.205771048971189,
+  "cached_mean_ms": 4.186393323097712,
+  "uncached_trials_ms": [
+    1.198621154225503,
+    1.2064262848490706,
+    1.1991019235350764,
+    1.2142859005297606,
+    1.2058096149793038,
+    1.2103814157084203
+  ],
+  "cached_trials_ms": [
+    4.145400961323713,
+    4.156800000391041,
+    4.330288137918195,
+    4.199149038714285,
+    4.137548077135132,
+    4.1491737231039085
+  ],
+  "cache_hits": 0,
+  "cache_misses": 114240,
+  "cache_final": {
+    "entries": 228,
+    "estimated_bytes": 2091958,
+    "hits": 0,
+    "misses": 19040,
+    "evictions": 18812,
+    "max_entries": 1024,
+    "max_estimated_bytes": 2097152,
+    "ttl_seconds": 300
+  }
+}

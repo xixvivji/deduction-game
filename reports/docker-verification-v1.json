@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-22",
+  "scope": "isolated Docker Compose project, rules bot, no external AI API calls",
+  "checks": {
+    "web_and_vue": true,
+    "ops_auth": true,
+    "mcp_stdio_search": true,
+    "game_rules_and_persistence": true,
+    "mlflow_record": true,
+    "mlflow_outage_isolation": true,
+    "mlflow_recovery": true,
+    "game_restart_restore": true,
+    "operator_key_persists": true,
+    "runtime_counters_reset": true
+  },
+  "native_tests": 211,
+  "container_tests": 211,
+  "architecture": "linux/arm64",
+  "python": "3.12.14",
+  "limitations": [
+    "No live OpenAI call in this verification",
+    "No amd64 execution test",
+    "No Internet-facing deployment test"
+  ]
+}

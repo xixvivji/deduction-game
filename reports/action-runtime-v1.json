@@ -1,0 +1,174 @@
+{
+  "scope": "Synthetic 4-room, one-action-per-room workload, 40ms default injected generation wait. Real LangGraph, local retrieval, rule application and temporary SQLite commit. No external LLM, API charge, browser latency, real-model quality, or production speedup measurement. Each repetition is a fresh process; initialization/imports excluded from timers. RSS includes whole-process imports and is a peak, not per-request memory.",
+  "rounds": 3,
+  "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+  "inputs_equal": true,
+  "applied_actions_equal": true,
+  "changed_setting": "GAME_AI_CONCURRENCY: 1 -> 2; no automatic concurrency change",
+  "results": {
+    "1": [
+      {
+        "concurrency": 1,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.19937962491530925,
+        "actions_per_second": 20.062230539851228,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.10066291701514274,
+        "completed_p95_seconds": 0.19920091703534126,
+        "phase_mean_seconds": {
+          "queue": 0.07494782301364467,
+          "inference": 0.0487707499996759,
+          "commit_wait": 2.885499270632863e-06,
+          "apply": 1.9489729311317205e-05,
+          "bookkeeping": 4.302011802792549e-06,
+          "persist": 0.0009847707697190344
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112525312,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      },
+      {
+        "concurrency": 1,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.20646583300549537,
+        "actions_per_second": 19.373665568644157,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.09867129195481539,
+        "completed_p95_seconds": 0.20623129105661064,
+        "phase_mean_seconds": {
+          "queue": 0.07521416654344648,
+          "inference": 0.05050449995906092,
+          "commit_wait": 4.343746695667505e-06,
+          "apply": 2.813548780977726e-05,
+          "bookkeeping": 6.354035576805472e-06,
+          "persist": 0.0009931667300406843
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112328704,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      },
+      {
+        "concurrency": 1,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.2026413339190185,
+        "actions_per_second": 19.739309461901385,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.10225770797114819,
+        "completed_p95_seconds": 0.20246004196815193,
+        "phase_mean_seconds": {
+          "queue": 0.07580386498011649,
+          "inference": 0.04951476023416035,
+          "commit_wait": 2.7710048016160727e-06,
+          "apply": 1.9458006136119366e-05,
+          "bookkeeping": 3.5627163015305996e-06,
+          "persist": 0.0010542500240262598
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112263168,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      }
+    ],
+    "2": [
+      {
+        "concurrency": 2,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.10269737499766052,
+        "actions_per_second": 38.94938892149017,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.052694834070280194,
+        "completed_p95_seconds": 0.10250654199626297,
+        "phase_mean_seconds": {
+          "queue": 0.026341156248236075,
+          "inference": 0.05036660423502326,
+          "commit_wait": 2.385495463386178e-06,
+          "apply": 1.452074502594769e-05,
+          "bookkeeping": 3.427237970754504e-06,
+          "persist": 0.0005773227894678712
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112607232,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      },
+      {
+        "concurrency": 2,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.10349962499458343,
+        "actions_per_second": 38.647483024304066,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.051498041953891516,
+        "completed_p95_seconds": 0.10330308298580348,
+        "phase_mean_seconds": {
+          "queue": 0.025766333448700607,
+          "inference": 0.050775177020113915,
+          "commit_wait": 1.9582512322813272e-06,
+          "apply": 1.7520971596240997e-05,
+          "bookkeeping": 3.3332325983792543e-06,
+          "persist": 0.0005612397799268365
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112590848,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      },
+      {
+        "concurrency": 2,
+        "cases": 4,
+        "injected_wait_ms_per_generation": 40.0,
+        "batch_seconds": 0.10540474997833371,
+        "actions_per_second": 37.94895392116781,
+        "completed": 4,
+        "fallback_completed": 0,
+        "failed": 0,
+        "completed_p50_seconds": 0.05232608295045793,
+        "completed_p95_seconds": 0.10524408298078924,
+        "phase_mean_seconds": {
+          "queue": 0.026157489512115717,
+          "inference": 0.05181760396226309,
+          "commit_wait": 1.9795261323451996e-06,
+          "apply": 1.3843498891219497e-05,
+          "bookkeeping": 3.302004188299179e-06,
+          "persist": 0.0005181354645173997
+        },
+        "api_calls": 0,
+        "process_peak_rss_bytes": 112574464,
+        "input_sha256": "205a21822a4ee45f25fdd780592b4936714112d6d7911c2d612c334d014d7767",
+        "applied_actions_sha256": "3ca3b3b78feb6212bfeba0c4d5dc418ef9ec065bc14c99bd69aba148cb15ef1e"
+      }
+    ]
+  },
+  "summary": {
+    "1": {
+      "completed": 12,
+      "median_batch_seconds": 0.2026413339190185,
+      "median_completed_p95_seconds": 0.20246004196815193,
+      "median_queue_mean_seconds": 0.07521416654344648,
+      "median_peak_rss_bytes": 112328704
+    },
+    "2": {
+      "completed": 12,
+      "median_batch_seconds": 0.10349962499458343,
+      "median_completed_p95_seconds": 0.10330308298580348,
+      "median_queue_mean_seconds": 0.026157489512115717,
+      "median_peak_rss_bytes": 112590848
+    }
+  }
+}

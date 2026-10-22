@@ -1,0 +1,812 @@
+{
+  "created_at": "2026-10-21T11:25:27.304744+00:00",
+  "strategy": "game-vocabulary-v1",
+  "fixture_sha256": "f3d10f314a51477aff3153d5b69491d2a49f0fb156eca2661a1284ea4be8b7fe",
+  "timing_repeats": 30,
+  "candidate_events": 33,
+  "scope": "24 fixed synthetic queries: 18 covered vocabulary, 3 lexical controls, 3 deliberately uncovered expressions. This is a vocabulary acceptance set, not an independent holdout or general semantic benchmark. Ranking excludes pinned and recent-event retention. Before: original data-only lexical scoring. After: event type + atomic player IDs + weighted vocabulary labels. Combined retrieval change. No generation/API calls; cache disabled. Unauthorized candidate filtering is tested before ranking and separately by MCP integration tests.",
+  "summary": {
+    "all": {
+      "before": {
+        "queries": 24,
+        "hit_at_1": 4,
+        "hit_at_3": 4,
+        "hit_at_8": 4,
+        "mrr": 0.19547244575510936,
+        "mean_ms": 0.1672034265033694,
+        "unauthorized_ids": 0
+      },
+      "after": {
+        "queries": 24,
+        "hit_at_1": 21,
+        "hit_at_3": 21,
+        "hit_at_8": 21,
+        "mrr": 0.8790404040404041,
+        "mean_ms": 0.4921764439334058,
+        "unauthorized_ids": 0
+      }
+    },
+    "covered_vocabulary": {
+      "before": {
+        "queries": 18,
+        "hit_at_1": 1,
+        "hit_at_3": 1,
+        "hit_at_8": 1,
+        "mrr": 0.0885760556196071,
+        "mean_ms": 0.16622827323671016,
+        "unauthorized_ids": 0
+      },
+      "after": {
+        "queries": 18,
+        "hit_at_1": 18,
+        "hit_at_3": 18,
+        "hit_at_8": 18,
+        "mrr": 1.0,
+        "mean_ms": 0.491305319937291,
+        "unauthorized_ids": 0
+      }
+    },
+    "lexical_control": {
+      "before": {
+        "queries": 3,
+        "hit_at_1": 3,
+        "hit_at_3": 3,
+        "hit_at_8": 3,
+        "mrr": 1.0,
+        "mean_ms": 0.16665410172815123,
+        "unauthorized_ids": 0
+      },
+      "after": {
+        "queries": 3,
+        "hit_at_1": 3,
+        "hit_at_3": 3,
+        "hit_at_8": 3,
+        "mrr": 1.0,
+        "mean_ms": 0.4997657534355919,
+        "unauthorized_ids": 0
+      }
+    },
+    "uncovered_expression": {
+      "before": {
+        "queries": 3,
+        "hit_at_1": 0,
+        "hit_at_3": 0,
+        "hit_at_8": 0,
+        "mrr": 0.03232323232323232,
+        "mean_ms": 0.17360367087854278,
+        "unauthorized_ids": 0
+      },
+      "after": {
+        "queries": 3,
+        "hit_at_1": 0,
+        "hit_at_3": 0,
+        "hit_at_8": 0,
+        "mrr": 0.03232323232323232,
+        "mean_ms": 0.4898138784079088,
+        "unauthorized_ids": 0
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "variant_1_0",
+      "group": "covered_vocabulary",
+      "query": "거짓말에 관한 발언",
+      "expected": 1,
+      "mode": "before",
+      "rank": 33,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16865142000218233,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_1_0",
+      "group": "covered_vocabulary",
+      "query": "거짓말에 관한 발언",
+      "expected": 1,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        1,
+        33,
+        32
+      ],
+      "mean_ms": 0.4899984730097155,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_1_1",
+      "group": "covered_vocabulary",
+      "query": "진술이 달라진 발언",
+      "expected": 1,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        1,
+        33,
+        32
+      ],
+      "mean_ms": 0.4963860342589517,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_1_1",
+      "group": "covered_vocabulary",
+      "query": "진술이 달라진 발언",
+      "expected": 1,
+      "mode": "before",
+      "rank": 1,
+      "top_3_ids": [
+        1,
+        33,
+        32
+      ],
+      "mean_ms": 0.1615403026031951,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_2_0",
+      "group": "covered_vocabulary",
+      "query": "알리바이에 관한 발언",
+      "expected": 2,
+      "mode": "before",
+      "rank": 32,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.1652666872056822,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_2_0",
+      "group": "covered_vocabulary",
+      "query": "알리바이에 관한 발언",
+      "expected": 2,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        2,
+        33,
+        32
+      ],
+      "mean_ms": 0.4877721269925435,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_2_1",
+      "group": "covered_vocabulary",
+      "query": "동선에 관한 발언",
+      "expected": 2,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        2,
+        33,
+        32
+      ],
+      "mean_ms": 0.49536800167212885,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_2_1",
+      "group": "covered_vocabulary",
+      "query": "동선에 관한 발언",
+      "expected": 2,
+      "mode": "before",
+      "rank": 32,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16165566242610416,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_3_0",
+      "group": "covered_vocabulary",
+      "query": "목격한 이야기는",
+      "expected": 3,
+      "mode": "before",
+      "rank": 31,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16751952935010195,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_3_0",
+      "group": "covered_vocabulary",
+      "query": "목격한 이야기는",
+      "expected": 3,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        3,
+        33,
+        32
+      ],
+      "mean_ms": 0.5068777711130679,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_3_1",
+      "group": "covered_vocabulary",
+      "query": "보았다는 이야기는",
+      "expected": 3,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        3,
+        5,
+        2
+      ],
+      "mean_ms": 0.49721796919281286,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_3_1",
+      "group": "covered_vocabulary",
+      "query": "보았다는 이야기는",
+      "expected": 3,
+      "mode": "before",
+      "rank": 32,
+      "top_3_ids": [
+        5,
+        2,
+        33
+      ],
+      "mean_ms": 0.17342641561602554,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_4_0",
+      "group": "covered_vocabulary",
+      "query": "보호해 준 이야기는",
+      "expected": 4,
+      "mode": "before",
+      "rank": 30,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.1724583989319702,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_4_0",
+      "group": "covered_vocabulary",
+      "query": "보호해 준 이야기는",
+      "expected": 4,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        4,
+        33,
+        32
+      ],
+      "mean_ms": 0.4978429991751909,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_4_1",
+      "group": "covered_vocabulary",
+      "query": "치료에 관한 이야기는",
+      "expected": 4,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        4,
+        33,
+        32
+      ],
+      "mean_ms": 0.4955986359467109,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_4_1",
+      "group": "covered_vocabulary",
+      "query": "치료에 관한 이야기는",
+      "expected": 4,
+      "mode": "before",
+      "rank": 30,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.17716809719180068,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_5_0",
+      "group": "covered_vocabulary",
+      "query": "역할에 관한 발언",
+      "expected": 5,
+      "mode": "before",
+      "rank": 29,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16424159985035658,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_5_0",
+      "group": "covered_vocabulary",
+      "query": "역할에 관한 발언",
+      "expected": 5,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        5,
+        33,
+        32
+      ],
+      "mean_ms": 0.4907237327036758,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_5_1",
+      "group": "covered_vocabulary",
+      "query": "진영에 관한 발언",
+      "expected": 5,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        5,
+        33,
+        32
+      ],
+      "mean_ms": 0.4893487979037066,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_5_1",
+      "group": "covered_vocabulary",
+      "query": "진영에 관한 발언",
+      "expected": 5,
+      "mode": "before",
+      "rank": 29,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.1616528257727623,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_6_0",
+      "group": "covered_vocabulary",
+      "query": "추방에 관한 발언",
+      "expected": 6,
+      "mode": "before",
+      "rank": 28,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.161023682449013,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_6_0",
+      "group": "covered_vocabulary",
+      "query": "추방에 관한 발언",
+      "expected": 6,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.4878971919727822,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_6_1",
+      "group": "covered_vocabulary",
+      "query": "투표에 관한 발언",
+      "expected": 6,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.484176406947275,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_6_1",
+      "group": "covered_vocabulary",
+      "query": "투표에 관한 발언",
+      "expected": 6,
+      "mode": "before",
+      "rank": 28,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16054306955387196,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_7_0",
+      "group": "covered_vocabulary",
+      "query": "공격에 관한 발언",
+      "expected": 7,
+      "mode": "before",
+      "rank": 27,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16131525626406074,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_7_0",
+      "group": "covered_vocabulary",
+      "query": "공격에 관한 발언",
+      "expected": 7,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        7,
+        33,
+        32
+      ],
+      "mean_ms": 0.48458342207595706,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_7_1",
+      "group": "covered_vocabulary",
+      "query": "살해에 관한 발언",
+      "expected": 7,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        7,
+        33,
+        32
+      ],
+      "mean_ms": 0.47881113132461905,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_7_1",
+      "group": "covered_vocabulary",
+      "query": "살해에 관한 발언",
+      "expected": 7,
+      "mode": "before",
+      "rank": 27,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16201793914660811,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_8_0",
+      "group": "covered_vocabulary",
+      "query": "추적에 관한 발언",
+      "expected": 8,
+      "mode": "before",
+      "rank": 26,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16128490290914974,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_8_0",
+      "group": "covered_vocabulary",
+      "query": "추적에 관한 발언",
+      "expected": 8,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        8,
+        33,
+        32
+      ],
+      "mean_ms": 0.5039179193166395,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_8_1",
+      "group": "covered_vocabulary",
+      "query": "미행에 관한 발언",
+      "expected": 8,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        8,
+        33,
+        32
+      ],
+      "mean_ms": 0.4768195018793146,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_8_1",
+      "group": "covered_vocabulary",
+      "query": "미행에 관한 발언",
+      "expected": 8,
+      "mode": "before",
+      "rank": 26,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.16511116021623215,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_9_0",
+      "group": "covered_vocabulary",
+      "query": "시체에 관한 이야기",
+      "expected": 9,
+      "mode": "before",
+      "rank": 25,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.1741250006792446,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_9_0",
+      "group": "covered_vocabulary",
+      "query": "시체에 관한 이야기",
+      "expected": 9,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        9,
+        33,
+        32
+      ],
+      "mean_ms": 0.49487079959362745,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_9_1",
+      "group": "covered_vocabulary",
+      "query": "사체에 관한 이야기",
+      "expected": 9,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        9,
+        33,
+        32
+      ],
+      "mean_ms": 0.48528484379251796,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "variant_9_1",
+      "group": "covered_vocabulary",
+      "query": "사체에 관한 이야기",
+      "expected": 9,
+      "mode": "before",
+      "rank": 25,
+      "top_3_ids": [
+        33,
+        32,
+        31
+      ],
+      "mean_ms": 0.17310696809242168,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_1",
+      "group": "lexical_control",
+      "query": "앞뒤가 안 맞는다",
+      "expected": 1,
+      "mode": "before",
+      "rank": 1,
+      "top_3_ids": [
+        1,
+        33,
+        32
+      ],
+      "mean_ms": 0.1639054622501135,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_1",
+      "group": "lexical_control",
+      "query": "앞뒤가 안 맞는다",
+      "expected": 1,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        1,
+        33,
+        32
+      ],
+      "mean_ms": 0.4940889310091734,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_3",
+      "group": "lexical_control",
+      "query": "숲길에서 마주쳤다",
+      "expected": 3,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        3,
+        9,
+        6
+      ],
+      "mean_ms": 0.5049235265081128,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_3",
+      "group": "lexical_control",
+      "query": "숲길에서 마주쳤다",
+      "expected": 3,
+      "mode": "before",
+      "rank": 1,
+      "top_3_ids": [
+        3,
+        9,
+        6
+      ],
+      "mean_ms": 0.1702319054553906,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_9",
+      "group": "lexical_control",
+      "query": "시신을 발견했다",
+      "expected": 9,
+      "mode": "before",
+      "rank": 1,
+      "top_3_ids": [
+        9,
+        7,
+        33
+      ],
+      "mean_ms": 0.16582493747894964,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "exact_9",
+      "group": "lexical_control",
+      "query": "시신을 발견했다",
+      "expected": 9,
+      "mode": "after",
+      "rank": 1,
+      "top_3_ids": [
+        9,
+        7,
+        33
+      ],
+      "mean_ms": 0.5002848027894894,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_1",
+      "group": "uncovered_expression",
+      "query": "의견이 돌변한 사람",
+      "expected": 1,
+      "mode": "after",
+      "rank": 33,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.47606369480490685,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_1",
+      "group": "uncovered_expression",
+      "query": "의견이 돌변한 사람",
+      "expected": 1,
+      "mode": "before",
+      "rank": 33,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.17086812683070698,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_4",
+      "group": "uncovered_expression",
+      "query": "도움을 받고 죽음을 피한 사람",
+      "expected": 4,
+      "mode": "before",
+      "rank": 30,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.17588878205666938,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_4",
+      "group": "uncovered_expression",
+      "query": "도움을 받고 죽음을 피한 사람",
+      "expected": 4,
+      "mode": "after",
+      "rank": 30,
+      "top_3_ids": [
+        6,
+        33,
+        32
+      ],
+      "mean_ms": 0.5046098337819179,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_8",
+      "group": "uncovered_expression",
+      "query": "누군가의 뒤를 밟았다",
+      "expected": 8,
+      "mode": "after",
+      "rank": 30,
+      "top_3_ids": [
+        7,
+        3,
+        5
+      ],
+      "mean_ms": 0.4887681066369017,
+      "unauthorized_ids": 0
+    },
+    {
+      "id": "uncovered_8",
+      "group": "uncovered_expression",
+      "query": "누군가의 뒤를 밟았다",
+      "expected": 8,
+      "mode": "before",
+      "rank": 30,
+      "top_3_ids": [
+        7,
+        3,
+        5
+      ],
+      "mean_ms": 0.174054103748252,
+      "unauthorized_ids": 0
+    }
+  ]
+}
