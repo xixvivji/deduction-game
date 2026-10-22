@@ -420,7 +420,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
     @app.get("/health/ready")
     async def ready(request:Request):
         hub=getattr(request.app.state,'hub',None)
-        if not getattr(request.app.state,'ready',False) or hub is None or getattr(hub.memory,'closed',False):
+        if not getattr(request.app.state,'ready',False) or hub is None or getattr(hub.memory,'closed',False) or not getattr(hub.memory,'healthy',True):
             raise HTTPException(503,'not ready')
         try:hub.db.execute('SELECT 1').fetchone()
         except Exception:raise HTTPException(503,'not ready') from None

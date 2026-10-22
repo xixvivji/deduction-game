@@ -93,7 +93,9 @@ class BeliefTests(unittest.TestCase):
                 p=super().generate(v,schema,feedback);p['claim_type']='suspect_wolf';p['evidence_ids']=[2];return p
         with patch('game.decision.time.sleep'):
             r=decide(g.observation('p0'),Suspect(),policy='verified',belief_memory=True)
-        self.assertTrue(r['fallback']);self.assertEqual(r['attempts'],3)
+        self.assertTrue(r['fallback']);self.assertEqual(r['attempts'],2)
+        self.assertEqual(r['audit']['research_rounds'],0)
+        self.assertEqual(r['audit']['fact_retries'],1)
         self.assertEqual(r['audit']['belief_memory']['entries']['p2']['status'],'confirmed_village')
 
     def test_vote_against_confirmed_villager_is_rejected(self):

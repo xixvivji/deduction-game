@@ -76,7 +76,8 @@ class ContextBudgetTests(unittest.TestCase):
         for selected in model.views:
             self.assertLessEqual(encoded_size(compact(selected)),6000)
             self.assertTrue({70,71}<={e['sequence'] for e in selected['events']})
-        self.assertEqual(len(r['audit']['runtime']['context_budget_history']),3)
+        self.assertEqual(len(r['audit']['runtime']['context_budget_history']),2)
+        self.assertEqual(r['audit']['research_rounds'],1)
 
     def test_server_config_is_validated_at_startup_and_is_immutable(self):
         from dataclasses import FrozenInstanceError

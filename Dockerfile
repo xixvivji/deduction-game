@@ -14,8 +14,9 @@ COPY game ./game
 COPY frontend/index.html frontend/ops.html ./frontend/
 COPY frontend/assets ./frontend/assets
 COPY --from=frontend /ui/node_modules/vue/dist/vue.global.prod.js ./frontend/node_modules/vue/dist/vue.global.prod.js
-COPY reports/claim-guard-reviewed-v2.json ./reports/claim-guard-reviewed-v2.json
-COPY tools/container_entrypoint.py tools/log_evaluation_mlflow.py ./tools/
+COPY reports/claim-guard-reviewed-v2.json reports/reliability*.json ./reports/
+COPY tools/container_entrypoint.py tools/log_evaluation_mlflow.py tools/run_checks.py tools/reliability_probe.py ./tools/
+COPY .github/workflows ./.github/workflows
 COPY tests ./tests
 USER 10001:10001
 EXPOSE 8200

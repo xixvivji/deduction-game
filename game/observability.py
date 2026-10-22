@@ -75,7 +75,7 @@ class Monitor:
         with self.lock:self.active[trace_id]=trace
         outcome=None; failed=False
         try:
-            # Use the documented config context, without changing the frozen decision graph.
+            # Observe runtime nodes without retaining the private graph state.
             with set_config_context({'callbacks':[NodeObserver(self,trace_id)]}) as ctx:
                 outcome=ctx.run(function,*args,**kwargs)
             return outcome
@@ -98,12 +98,14 @@ class Monitor:
                  'usage_known_calls':sum(m.get('input_tokens') is not None and m.get('output_tokens') is not None for m in metrics),
                  'selected_events':number(runtime.get('selected_events')),
                  'visible_events':number(runtime.get('visible_events')),
+                 'research_calls':number(audit.get('research_rounds')),
+                 'repeated_failure_stops':int(bool(audit.get('stopped_repeated_failure'))),
                  'forced':runtime.get('route')=='forced_action'}
         with self.lock:
             trace=self.active.pop(trace_id)
             trace.update(summary,status='error' if failed else 'fallback' if summary['fallback'] else 'complete',current_node=None)
             self.recent.appendleft(trace); self.totals['decisions']+=1
-            for key in ('api_calls','api_errors','input_tokens','output_tokens','usage_known_calls','retries','fallback','failed','forced'):
+            for key in ('api_calls','api_errors','input_tokens','output_tokens','usage_known_calls','retries','fallback','failed','forced','research_calls','repeated_failure_stops'):
                 self.totals[key]+=summary[key]
         if not self.actions.record_decision(trace_id, summary):
             self._export({k:float(summary[k]) for k in DECISION_METRICS})
