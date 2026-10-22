@@ -14,3 +14,11 @@ node_modules/
 runtime/
 *.db-shm
 *.db-wal
+
+# 개인 발표 준비 자료는 로컬에서만 보관
+docs/presentation-script.*
+docs/presentation/*대본*
+docs/presentation/private/
+
+# macOS 폴더 표시 정보
+.DS_Store
