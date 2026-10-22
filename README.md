@@ -1,6 +1,14 @@
 # 밤의 증언 — AI 사회적 추리 게임
 
-사람과 AI가 시민·조사자·늑대가 되어 목격 정보를 모으고, 토론과 투표로 상대 진영을 찾아내는 턴제 게임입니다. GuardLab과 별개 프로젝트입니다.
+사람과 AI가 시민 진영·늑대 진영으로 나뉘어 마을을 탐색하고, 각자 가진 기억을 바탕으로 토론·투표하는 사회적 추리 게임입니다. 실시간 이동과 건물 출입, 차례제 회의를 지원합니다. AI는 자신의 역할과 관측 범위 안에서 기억을 검색하고, 근거 검증을 거쳐 행동합니다.
+
+**G075 김지원 · 미니프로젝트 과제 2 · v0.2.0**
+
+[![자동 품질 검사](https://github.com/xixvivji/deduction-game/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/xixvivji/deduction-game/actions/workflows/quality.yml)
+
+[빠른 실행](#quickstart) · [AI 구조와 기술 요소](#architecture) · [검증과 전후 비교](#validation) · [문제 해결](#troubleshooting) · [문서·발표자료](#documents) · [버전 기록](CHANGELOG.md)
+
+![실시간 마을 탐색 화면](reports/assets/visual-after-map.jpg)
 
 ## 구현된 기능
 
@@ -18,37 +26,60 @@
 - 근거 없는 사실 단정의 제한적 탐지, 의심 근거 만료·재검토, 필수 근거를 보존하는 문맥 바이트 예산
 - 고정 합성 상황으로 모델/기억 방식 비교 평가
 
-## Docker로 실행
+<a id="quickstart"></a>
 
-다른 PC에서 같은 서비스 구성을 실행하려면 [Docker Compose 안내](docs/docker.md)를 참고하세요. 기존 가상환경 실행도 유지합니다. `.env`에 본인의 키를 설정한 뒤 `docker compose up -d --build --wait`로 게임·MCP·MLflow를 함께 실행합니다. Docker 게임 포트는 8300, MLflow는 5600이며 데이터는 별도 볼륨에 보존합니다. 운영 화면 접근 키 확인과 백업·종료 방법도 안내에 있습니다.
+## 빠른 실행
 
-## 설치
-
-Python 3.10 이상과 Node/npm이 필요합니다. 아래 명령은 저장소 루트에서 실행합니다. 개발 검증은 Python 3.14에서 수행했습니다.
+처음 받는 경우 저장소를 내려받고 루트로 이동합니다. 기본 브랜치 `main`은 정식 버전, `develop`은 다음 버전의 통합 코드입니다.
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-npm ci --prefix frontend
+git clone https://github.com/xixvivji/deduction-game.git
+cd deduction-game
+# 기존 설정을 덮어쓰지 않음
+[ -f .env ] || cp .env.example .env
 ```
 
-Vue는 로컬 설치 파일을 제공하므로 실행 중 외부 CDN을 요청하지 않습니다. 생성된 `.venv`, `node_modules`, `runtime`, 환경파일은 Git에서 제외됩니다.
+`.env.example`은 **OpenAI / gpt-4.1-mini**를 선택합니다. `.env`의 `OPENAI_API_KEY`에 본인 키를 입력하세요. LangSmith는 선택 사항이며 예제에서는 꺼져 있습니다. 키를 넣은 `.env`는 Git에서 제외됩니다.
 
-## 웹 실행
+| 실행 방식 | 필요한 환경 | 게임 / 운영 화면 | MLflow |
+| --- | --- | --- | --- |
+| Docker Compose | Docker와 Compose v2 | `http://127.0.0.1:8300` / `/ops` | `http://127.0.0.1:5600`에 함께 실행 |
+| 로컬 가상환경 | Python 3.12 권장, Node.js 22 / npm | `http://127.0.0.1:8200` / `/ops` | 선택 설치, `http://127.0.0.1:5500` |
 
-Ollama를 별도 터미널에서 시작한 뒤 설치된 모델을 지정합니다. 자동 모델 다운로드는 하지 않습니다.
+### Docker로 실행
 
 ```sh
+docker compose up -d --build --wait
+docker compose ps
+```
+
+게임·MCP·MLflow를 함께 실행합니다. 호스트에 Python이나 Ollama를 설치할 필요는 없습니다. Docker 운영 화면은 별도 접근 키를 요구합니다. 키 확인, 백업, 종료·재개는 [Docker Compose 안내](docs/docker.md)를 참고하세요. 게임 DB와 MLflow 데이터는 각각 별도 볼륨에 보존합니다.
+
+### 로컬 가상환경으로 실행
+
+Docker·CI는 Python 3.12와 Node.js 22를 사용합니다. macOS 개발 환경의 Python 3.14에서도 테스트했습니다. 아래 명령은 저장소 루트에서 실행합니다.
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-lock.txt
+npm ci --prefix frontend --ignore-scripts
+./run_web.sh
+```
+
+Vue는 로컬 설치 파일을 제공하므로 실행 중 외부 CDN을 요청하지 않습니다. 별도 프런트엔드 개발 서버는 필요 없습니다. 생성된 `.venv`, `node_modules`, `runtime`, 환경파일은 Git에서 제외됩니다.
+
+Ollama를 선택할 때는 설치한 모델과 제공자를 **모두** 지정합니다. `.env`의 OpenAI 설정보다 아래 환경변수가 우선합니다. 모델 자동 다운로드는 하지 않습니다.
+
+```sh
+# 별도 터미널에서 실행. 이미 Ollama가 실행 중이면 생략
 ollama serve
+# 게임 서버를 시작하는 터미널
+GAME_PROVIDER=ollama GAME_MODEL=qwen3:4b-instruct ./run_web.sh
 ```
 
-다른 터미널:
+## 웹에서 플레이
 
-```sh
-GAME_MODEL=qwen3:4b-instruct ./run_web.sh
-```
-
-브라우저에서 **http://127.0.0.1:8200** 에 접속합니다.
+선택한 실행 방식의 게임 주소(Docker 8300 / 가상환경 8200)에 접속합니다.
 
 1. 이름을 입력하고 방을 만듭니다.
 2. 친구가 같은 서버에 접속해 이름과 방 코드를 입력합니다.
@@ -58,7 +89,7 @@ GAME_MODEL=qwen3:4b-instruct ./run_web.sh
 
 같은 컴퓨터에서는 새 탭 두 개로 두 참가자를 시험할 수 있습니다. 탭 복제는 세션 정보가 복제될 수 있으므로 새 URL 탭을 여세요. 같은 네트워크의 다른 기기를 연결할 때는 `GAME_HOST=0.0.0.0 ./run_web.sh`로 시작하고 서버 컴퓨터의 LAN 주소로 접속합니다. 인터넷 공개 배포는 하지 않았습니다.
 
-규칙/화면만 빠르게 확인하는 **AI 없는 모드**:
+가상환경에서 규칙/화면만 빠르게 확인하는 **외부 모델 호출 없는 규칙 봇 모드**:
 
 ```sh
 GAME_PROVIDER=demo GAME_DB=/tmp/night-demo.db ./run_web.sh
@@ -103,13 +134,13 @@ AI의 비밀 협의·토론은 기존 LLM/LangGraph를 사용합니다. 현장�
 
 ## 모델과 호출 제한
 
-서버는 기본 `ollama`, 기본 모델 `qwen3:4b-instruct`입니다.
+`.env.example`과 Docker 구성은 `openai` / `gpt-4.1-mini`를 사용합니다. 가상환경에서 제공자·모델 환경변수를 모두 생략한 코드 기본값은 `ollama` / `qwen3:4b-instruct`입니다.
 
 - `GAME_PROVIDER`: ollama / openai / gemini / demo
 - `GAME_MODEL`: 모델 ID. 외부 API는 명시적으로 설정해야 합니다.
 - `GAME_MAX_CALLS`: 방당 생성 시도 한도, 기본 300회. 재시도 포함이며 금액 한도가 아닙니다.
 - `GAME_DB`: SQLite 파일 경로, 기본 `runtime/games.db`
-- `GAME_HOST`, `GAME_PORT`: 기본 127.0.0.1, 8200
+- `GAME_HOST`, `GAME_PORT`: 가상환경 실행의 기본 127.0.0.1, 8200. `GAME_PORT=8201 ./run_web.sh`처럼 셸 환경변수로 지정합니다. 실행 스크립트가 `.env`를 읽기 전에 주소·포트를 결정하므로 이 두 값은 `.env`만 수정해서 적용되지 않습니다.
 
 외부 API는 서버 환경변수 `OPENAI_API_KEY` 또는 `GEMINI_API_KEY`를 설정하세요. 키는 프런트엔드나 Git에 넣지 않습니다. `./run_web.sh`는 루트의 `.env`를 자동으로 읽습니다. 이미 지정한 환경변수가 우선합니다. 외부 모델을 선택하면 허용된 개인 게임 기록이 해당 제공자에게 전송됩니다.
 
@@ -130,20 +161,61 @@ OpenAI gpt-4.1-mini는 실제 7인 게임을 종료까지 실행해 구조화 �
 
 투표 최다 득표 동률 또는 기권 최다이면 추방하지 않습니다. 늑대가 모두 제거되면 시민 승리, 살아 있는 늑대 수가 나머지 인원 이상이면 늑대 승리입니다. 최대 8일차 이후에는 무승부입니다.
 
-## 구조
+<a id="architecture"></a>
 
-- `game/engine.py`: 규칙·정보 분리·명령 중복 방지·직렬화
-- `game/ai.py`, `game/providers.py`: 공통 프롬프트·제공자·호출 예산
-- `game/decision.py`: LangGraph 판단 흐름
-- `game/memory.py`: 권한이 적용된 기록 검색, 조사 결과와 현재 협의 고정 보존
-- `game/server.py`: 방별 lock·진행 작업·SQLite·REST/WebSocket
-- `frontend/`: Vue 화면
-- `game/evaluate.py`: 고정 상황 평가
-- `tests/`: 규칙·제공자·정보 분리·다중 참가자·재개 테스트
+## AI 구조와 기술 요소
 
-AI 호출은 전체 서버에서 최대 1건씩 실행하고 이벤트 루프 밖에서 처리합니다. 각 방은 독립 상태를 가지며 인간 명령은 방 lock 아래에서 처리됩니다. 네트워크 멀티는 단일 서버 프로세스 기준입니다. **uvicorn workers를 2 이상으로 실행하지 마세요.** 여러 서버를 지원하려면 공유 상태 저장과 분산 lock이 필요합니다.
+각 AI 참가자는 자기 역할·관측·의심 기록을 따로 갖고 판단합니다. 공통 LangGraph와 모델 연결을 재사용하며, 참가자마다 별도 프로세스나 모델 서버를 띄우는 방식은 아닙니다. 그래프가 판단하고 게임 엔진이 합법적인 행동인지 최종 검사합니다.
+
+```mermaid
+flowchart LR
+    A[참가자별 허용된 관측] --> B[MCP 개인 기억 검색]
+    B --> C[LLM 구조화 행동 생성]
+    C --> D[인용·핵심 주장·토론 품질 검사]
+    D -->|통과| E[게임 규칙 검사·상태 반영]
+    D -->|근거 부족| F[제한된 재검색]
+    F --> C
+    D -->|수정 가능| G[피드백 후 재작성]
+    G --> C
+    D -->|반복 실패·한도 도달| H[기본 행동·기권]
+    H --> E
+    E --> I[SQLite 저장·WebSocket 동기화]
+```
+
+전체 생성은 최대 3회, 확장 재검색은 최대 2회입니다. 이미 수행한 검색과 같은 실패가 반복되면 일찍 종료합니다. 선택지가 하나로 고정된 밤 행동은 모델 호출을 생략합니다. 전송 오류·입력 형식 오류·시간 예산 등의 세부 분기는 [근거 파이프라인](docs/ai-evidence.md)과 [최신 재검색 정책](docs/ai-reliability.md)을 참고하세요.
+
+| 기술 요소 | 실제 사용 범위 | 주요 코드 |
+| --- | --- | --- |
+| Multi-Agent · LangGraph | 역할·개인 기억을 분리한 참가자별 판단, 생성·검증·재검색 분기 | [decision.py](game/decision.py), [beliefs.py](game/beliefs.py) |
+| MCP | 서버 시작 시 연결한 stdio 기억 서버, 요청자 관측 안의 검색과 제한된 재연결 | [mcp_memory.py](game/mcp_memory.py), [mcp_memory_server.py](game/mcp_memory_server.py) |
+| RAG | 게임 기록을 검색해 생성 문맥에 주입, 중요 근거 보존·동의어 보완. 임베딩·벡터 DB 미사용 | [memory.py](game/memory.py), [search_language.py](game/search_language.py) |
+| 의존성 주입 · 자원 재사용 | 모델 클라이언트·기억 검색·통신 객체를 주입, 공통 연결과 방별 예산 분리 | [server.py](game/server.py), [providers.py](game/providers.py), [memory_backend.py](game/memory_backend.py) |
+| 운영 · 추적 | `/ops` 실행 흐름·행동 완료 지표, LangSmith 추적, MLflow 숫자 지표 기록 | [operations.py](game/operations.py), [observability.py](game/observability.py), [mlflow_tracking.py](game/mlflow_tracking.py) |
+| 모듈화 · 자동 검사 | 규칙·검색·검증·운영 분리, 단위·통합·실제 MCP 복구 검사 | [tests](tests/), [검사 도구](tools/run_checks.py), [GitHub Actions](.github/workflows/quality.yml) |
+
+### 무엇을 언제 만드는가
+
+| 수명 | 대상과 이유 |
+| --- | --- |
+| 서버 프로세스 | 모듈 로딩 시 그래프를 한 번 컴파일. FastAPI lifespan에서 MCP 관리자·HTTP 연결 풀·실행 제한·DB 연결을 만들고 종료 시 정리 |
+| 방·참가자 | 방 상태와 개인 판단 기록을 분리. 방의 AI 클라이언트는 필요할 때 만들고 호출 예산과 함께 재사용 |
+| AI 판단 요청 | 현재 관측·검색 결과·검증 이력·재시도 상태를 새로 구성. 다른 참가자에게 상태를 공유하지 않음 |
+
+AI 판단은 기본 **서로 다른 방에서 최대 2건** 실행하고, 동기 추론 작업은 이벤트 루프 밖에서 처리합니다. 같은 방의 차례는 순서를 지키며 인간 명령은 방 lock 아래에서 처리됩니다. 대기열은 16개, 대기 시간은 30초로 제한합니다. **uvicorn workers를 2 이상으로 실행하지 마세요.** 방 상태와 SQLite 저장은 단일 서버 프로세스를 전제로 합니다.
+
+나머지 구조: [규칙·정보 분리](game/engine.py), [실시간 이동·시야](game/exploration.py), [Vue 화면](frontend/), [설계 문서](docs/design.md).
+
+<a id="validation"></a>
 
 ## 테스트와 평가
+
+v0.2.0 기준 **Python 단위·통합 테스트 233개, JavaScript 테스트 6개**와 운영 화면 구문 검사를 통과했습니다. 로컬 검사와 GitHub Actions가 같은 도구를 사용하며, 외부 모델 키를 비운 상태에서 실제 MCP 하위 프로세스 연결·복구도 검사합니다.
+
+```sh
+.venv/bin/python -m tools.run_checks
+```
+
+검사 결과와 로그는 Git에서 제외되는 `runtime/verification/`에 저장합니다. 외부 모델 품질 평가는 아래처럼 별도로 실행합니다. `game.play`, 모델 평가 명령은 선택한 제공자에 실제 요청을 보낼 수 있습니다.
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -v
@@ -166,7 +238,9 @@ LangGraph 추적은 선택적으로 `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY
 
 ## Git 관리
 
-Git Flow (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) 및 타입 + 한글 커밋 메시지. 저장소: https://github.com/xixvivji/deduction-game
+`main`은 정식 릴리스, `develop`은 다음 버전 통합 브랜치입니다. 새 작업은 `develop`에서 `feature/<작업명>`으로 시작합니다. 릴리스는 `release/<버전>`을 거쳐 `main`·`develop`에 merge commit으로 통합하고 버전 태그를 남깁니다. 긴급 수정은 `hotfix/*`를 사용합니다.
+
+커밋은 `feat: 기능 설명`, `fix: 오류 수정`, `docs: 문서 보완`처럼 타입 + 한글 설명으로 작성합니다. 세부 규칙은 [AGENTS.md](AGENTS.md), 출시 변경은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
 
 ## API 참고
 
@@ -201,7 +275,7 @@ Git Flow (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) 및 타입 + 
 - 소리는 기본 꺼짐입니다. 사용자가 켠 뒤 Web Audio로 환경음·벌레음·발걸음·종소리를 합성하며 음량 조절이 가능합니다. 숨겨진 탭은 음소거됩니다. 실제 녹음 음원이나 음성 대사는 포함하지 않습니다.
 - 움직임 줄이기는 캐릭터·화면 전환·투표 연출 전체에 적용됩니다. 운영체제의 동작 줄이기 설정도 우선 적용합니다.
 
-검증: 기존 Python 테스트 43개 통과, JavaScript 구문 및 diff 검사 통과. 규칙 봇 모드에서 밤 장소 선택·공개 발언·인물 기록 조회·투표 전환을 브라우저로 확인했습니다. 390px 모바일 화면 가로 넘침 없음과 움직임 끄기 후 애니메이션 중지를 확인했습니다. 소리 켜기/끄기 UI와 브라우저 오류 여부를 확인했으며, 실제 스피커에서의 음질 청취 검증은 수행하지 않았습니다.
+해당 기능 추가 당시 검증: 기존 Python 테스트 43개 통과, JavaScript 구문 및 diff 검사 통과. 규칙 봇 모드에서 밤 장소 선택·공개 발언·인물 기록 조회·투표 전환을 브라우저로 확인했습니다. 390px 모바일 화면 가로 넘침 없음과 움직임 끄기 후 애니메이션 중지를 확인했습니다. 소리 켜기/끄기 UI와 브라우저 오류 여부를 확인했으며, 실제 스피커에서의 음질 청취 검증은 수행하지 않았습니다.
 
 ## 지목 질문과 기억 검색
 
@@ -213,7 +287,7 @@ Git Flow (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) 및 타입 + 
 
 최근 질문과 답변은 별도 카드에 남고, 공개 인용은 원문을 펼쳐 볼 수 있습니다. 질문 대기 상태와 변경된 차례는 저장·재시작 복구되며 중복 요청은 차례를 다시 소비하지 않습니다.
 
-검증: 테스트 총 50개 통과(질문 관련 7개 추가), 규칙 봇 브라우저에서 대상·인용 선택→질문→대상 답변 순서 확인, 콘솔 오류 없음. 실제 로컬 qwen3:4b-instruct로 잡담 30건이 섞인 합성 기록의 발언 회상 질문을 2회 실행했습니다. 두 실행 모두 재시도 없이 기록을 인용했으며, 첫 실행은 다른 목격을 혼합한 부정확한 해석을 보여 지침을 보완했습니다. 두 번째는 요청한 발언을 회상했으나 3인칭 서술 등 품질 개선 여지가 남습니다. 이는 소규모 동작 확인이며 정확도 향상 수치로 해석하지 않습니다.
+해당 기능 추가 당시 검증: 테스트 총 50개 통과(질문 관련 7개 추가), 규칙 봇 브라우저에서 대상·인용 선택→질문→대상 답변 순서 확인, 콘솔 오류 없음. 실제 로컬 qwen3:4b-instruct로 잡담 30건이 섞인 합성 기록의 발언 회상 질문을 2회 실행했습니다. 두 실행 모두 재시도 없이 기록을 인용했으며, 첫 실행은 다른 목격을 혼합한 부정확한 해석을 보여 지침을 보완했습니다. 두 번째는 요청한 발언을 회상했으나 3인칭 서술 등 품질 개선 여지가 남습니다. 이는 소규모 동작 확인이며 정확도 향상 수치로 해석하지 않습니다.
 
 ## 확장 인원과 정보 역할
 
@@ -232,7 +306,7 @@ Git Flow (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) 및 타입 + 
 
 신규 역할은 시민 진영이며 승리 판정은 기존 규칙을 사용합니다. 위 구성은 초기 설계로 승률 균형 검증은 아직 하지 않았습니다. 인원 증가로 AI 호출·대기 시간도 증가합니다. 기본 모델 호출 예산 300회는 유지되며 긴 대규모 게임에서는 예산 소진으로 일시 중단될 수 있습니다.
 
-검증: 기존 포함 56개 테스트 통과 후 9·11인 종료까지의 진행 테스트 1개 추가 통과(총 57개). 신규 역할 대상 제한·개인 정보 공개·저장 복구·사망 시 결과 미전달·11명 참가 정원을 확인했습니다. 브라우저에서 11인 시작과 390px 모바일 화면(아바타 11개, 가로 넘침 없음), 콘솔 오류 없음을 확인했습니다. 신규 역할의 실제 LLM 플레이 품질과 장기 게임 균형은 별도 평가 대상입니다.
+해당 기능 추가 당시 검증: 기존 포함 56개 테스트 통과 후 9·11인 종료까지의 진행 테스트 1개 추가 통과(총 57개). 신규 역할 대상 제한·개인 정보 공개·저장 복구·사망 시 결과 미전달·11명 참가 정원을 확인했습니다. 브라우저에서 11인 시작과 390px 모바일 화면(아바타 11개, 가로 넘침 없음), 콘솔 오류 없음을 확인했습니다. 신규 역할의 실제 LLM 플레이 품질과 장기 게임 균형은 별도 평가 대상입니다.
 
 카메라 좌표 보간 회귀 테스트: `node --test tests/map_motion.test.cjs`
 
@@ -273,7 +347,7 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 
 ## 발표용 동일 입력 실측
 
-현재 OpenAI 설정으로 근거 판단 8개와 고정 행동 2개를 조건별 2회 반복했습니다. 근거 판단 기준 일치는 10/16에서 16/16, 입력 토큰은 45,328에서 36,420으로 변했으며 평균 지연과 출력 토큰은 증가했습니다. 여러 개선을 묶은 작은 합성 세트의 결과이며 승률·일반 추리 능력·검색 정확도·청구 비용을 평가한 수치는 아닙니다. [측정 조건과 한계](reports/release-evaluation-v1.md), [집계 지표](reports/release-evaluation-v1.json)를 참고하세요. 원문 응답과 발표 화면은 로컬의 ignored `runtime/`에 보관합니다.
+이전 발표용 비교 실험에서 OpenAI로 근거 판단 8개와 고정 행동 2개를 조건별 2회 반복했습니다. 당시 코드·설정의 결과이며 아래 최신 재검색 실험과는 별도입니다. 근거 판단 기준 일치는 10/16에서 16/16, 입력 토큰은 45,328에서 36,420으로 변했으며 평균 지연과 출력 토큰은 증가했습니다. 여러 개선을 묶은 작은 합성 세트의 결과이며 승률·일반 추리 능력·검색 정확도·청구 비용을 평가한 수치는 아닙니다. [측정 조건과 한계](reports/release-evaluation-v1.md), [집계 지표](reports/release-evaluation-v1.json)를 참고하세요. 원문 응답과 발표 화면은 로컬의 ignored `runtime/`에 보관합니다.
 
 ## 게임 동의어·표현 검색 보완
 
@@ -287,7 +361,7 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 
 ## 운영 화면과 실험 비교
 
-게임 실행 후 [AI 운영 모니터](http://127.0.0.1:8200/ops)에서 실제 실행 단계·대기열·토큰과 고정 입력 평가를 확인할 수 있습니다. MLflow는 선택 기능이며 게임 환경과 별도 설치합니다. [실행·지표 범위·한계](docs/operations.md)와 [최신 5분 발표 대본](docs/presentation-script.txt)을 참고하세요.
+게임 실행 후 운영 모니터([가상환경 8200](http://127.0.0.1:8200/ops) / [Docker 8300](http://127.0.0.1:8300/ops))에서 실제 실행 단계·대기열·토큰과 고정 입력 평가를 확인할 수 있습니다. 가상환경에서 MLflow는 선택 설치이며, Docker Compose에는 별도 컨테이너로 포함됩니다. AI Flow는 이 페이지의 실행 흐름 표시를 뜻하며 Apache Airflow는 사용하지 않습니다. LangSmith는 상세 실행 추적, MLflow는 실험·숫자 지표 보관을 담당합니다. [실행·지표 범위·한계](docs/operations.md)와 [최신 5분 발표 대본](docs/presentation-script.txt)을 참고하세요.
 
 발표: [최신 PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx) — 본 발표 8장(5분), 부록 5장.
 
@@ -300,3 +374,43 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 ## 재검색 낭비·MCP 복구·자동 품질 검사
 
 동일 실패의 반복 재검색을 제한하고 MCP 하위 프로세스의 장애 후 재연결을 추가했습니다. `/ops`에서 고정 응답 평가, 실제 API 평가, 격리된 장애 복구 시험을 구분해 볼 수 있습니다. 고정 응답의 호출은 감소했지만 실제 API 8건에서는 호출·입력 토큰이 거의 같았습니다. [최신 수치·재현 명령·한계](docs/ai-reliability.md)를 확인하세요. GitHub Actions는 API 키 없이 단위·통합 검사와 실제 MCP 복구 시험을 실행합니다.
+
+
+### 최신 개선의 측정 범위
+
+| 시험 | 개선 전 → 후 | 해석 |
+| --- | --- | --- |
+| 고정 응답 8상황 × 5회 | 재검색 25 → 20회, 모의 생성 75 → 70회, 기대 행동 40/40 유지 | 반복 실패 제어 흐름의 효과. 실제 API 비용 절감 수치가 아님 |
+| 실제 OpenAI 8상황씩 | 호출 11 → 11회, 기대 행동 8/8 유지, 평균 판단 1.728 → 1.723초 | 이 표본에서는 호출·비용 감소를 확인하지 못함 |
+| 격리된 MCP 장애 주입 3회 | 5초 내 복구 0/3 → 3/3, 개선 후 평균 약 0.60초 | 평가용 하위 프로세스 복구 결과. 운영 장애율·서비스 SLO가 아님 |
+
+조건·입력 지문·소스 지문은 [평가 문서와 원본 JSON](docs/ai-reliability.md)에 보존합니다. 실제 API의 작은 표본이나 시점이 다른 측정으로 일반적인 속도·정확도 향상을 주장하지 않습니다.
+
+![재검색·MCP 복구 전후 비교 화면](reports/assets/reliability-ops.png)
+
+<a id="troubleshooting"></a>
+
+## 실행 중 확인할 것
+
+| 증상 | 확인할 것 |
+| --- | --- |
+| 실행했는데 예전 화면이 보임 | 가상환경은 8200, Docker는 8300입니다. 현재 실행 방식의 주소인지 확인하세요. |
+| OpenAI 인증 오류 또는 Ollama 모델을 찾지 못함 | `.env`의 제공자·모델 조합을 확인하세요. Ollama 실행 시 `GAME_PROVIDER=ollama`도 지정해야 합니다. |
+| Docker 운영 화면에서 접근 키를 요구함 | OpenAI 키가 아닌 별도 운영 키입니다. [확인 방법](docs/docker.md#운영-화면-접근)을 따르세요. |
+| 서버 재시작 후 게임이 멈춤 | 진행 중인 방은 일시정지 상태로 복원됩니다. 방장이 재개합니다. |
+| 운영 화면의 실시간 지표가 비어 있음 | 서버 시작 이후 새 AI 판단이 있어야 기록됩니다. 보존된 전후 평가와 실시간 사용량은 별개입니다. |
+| 로컬 포트 변경이 적용되지 않음 | `GAME_PORT=8201 ./run_web.sh`처럼 셸에 지정합니다. Docker는 `.env`의 `DOCKER_GAME_PORT`를 사용합니다. |
+
+<a id="documents"></a>
+
+## 문서·발표자료
+
+| 목적 | 문서 |
+| --- | --- |
+| 전체 설계·게임 규칙 | [설계](docs/design.md) |
+| AI 검색·검증·개인 기억 | [근거 파이프라인](docs/ai-evidence.md), [개인 판단 기록](docs/agent-belief-memory.md), [토론 품질](docs/discussion-quality.md) |
+| 자원 재사용·운영·복구 | [AI 실행 효율](docs/ai-runtime-optimization.md), [운영 화면·MLflow](docs/operations.md), [최신 재검색·MCP 복구](docs/ai-reliability.md) |
+| 다른 PC에서 실행·백업 | [Docker 운영](docs/docker.md) |
+| 실험 근거 | [보고서 목록](reports/README.md), [실제 OpenAI 게임](reports/docker-openai-live-v1.md) |
+| 발표 | [PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx), [5분 대본](docs/presentation-script.txt) |
+| 화면·버전 변경 | [그래픽 정리](docs/visual-design.md), [버전 기록](CHANGELOG.md) |
