@@ -361,7 +361,7 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 
 ## 운영 화면과 실험 비교
 
-게임 실행 후 운영 모니터([가상환경 8200](http://127.0.0.1:8200/ops) / [Docker 8300](http://127.0.0.1:8300/ops))에서 실제 실행 단계·대기열·토큰과 고정 입력 평가를 확인할 수 있습니다. 가상환경에서 MLflow는 선택 설치이며, Docker Compose에는 별도 컨테이너로 포함됩니다. AI Flow는 이 페이지의 실행 흐름 표시를 뜻하며 Apache Airflow는 사용하지 않습니다. LangSmith는 상세 실행 추적, MLflow는 실험·숫자 지표 보관을 담당합니다. [실행·지표 범위·한계](docs/operations.md)와 [최신 5분 발표 대본](docs/presentation-script.txt)을 참고하세요.
+게임 실행 후 운영 모니터([가상환경 8200](http://127.0.0.1:8200/ops) / [Docker 8300](http://127.0.0.1:8300/ops))에서 실제 실행 단계·대기열·토큰과 고정 입력 평가를 확인할 수 있습니다. 가상환경에서 MLflow는 선택 설치이며, Docker Compose에는 별도 컨테이너로 포함됩니다. AI Flow는 이 페이지의 실행 흐름 표시를 뜻하며 Apache Airflow는 사용하지 않습니다. LangSmith는 상세 실행 추적, MLflow는 실험·숫자 지표 보관을 담당합니다. [실행·지표 범위·한계](docs/operations.md)를 참고하세요.
 
 발표: [PDF 바로 보기](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf) · [편집용 PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx) — 본 발표 8장(5분), 부록 5장. PDF는 기존 PPT 13장을 같은 내용으로 변환했습니다. 자료의 테스트 수와 캡처는 발표자료 작성 당시 기준이며, 최신 233개 검사·MCP 복구 실측은 [최신 평가](docs/ai-reliability.md)를 참고하세요.
 
@@ -412,5 +412,5 @@ AI 판단에는 기본 120초의 협력적 시간 예산이 적용되며, API �
 | 자원 재사용·운영·복구 | [AI 실행 효율](docs/ai-runtime-optimization.md), [운영 화면·MLflow](docs/operations.md), [최신 재검색·MCP 복구](docs/ai-reliability.md) |
 | 다른 PC에서 실행·백업 | [Docker 운영](docs/docker.md) |
 | 실험 근거 | [보고서 목록](reports/README.md), [실제 OpenAI 게임](reports/docker-openai-live-v1.md) |
-| 발표 | [PDF](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf), [PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx), [5분 대본](docs/presentation-script.txt) |
+| 발표 | [PDF](docs/presentation/G075_김지원_밤의증언_AI운영개선.pdf), [PPT](docs/presentation/G075_김지원_밤의증언_AI운영개선.pptx) |
 | 화면·버전 변경 | [그래픽 정리](docs/visual-design.md), [버전 기록](CHANGELOG.md) |
