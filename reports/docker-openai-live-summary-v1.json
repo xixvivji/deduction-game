@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-22",
+  "environment": "Docker linux/arm64",
+  "scope": "7 players, classic mode, automated human actions and live OpenAI agents",
+  "room_id": "0c37d398",
+  "winner": "wolf",
+  "days": 4,
+  "seconds": 129.2,
+  "human_actions": 9,
+  "question_sent": true,
+  "ai_decisions": 76,
+  "model_calls": 89,
+  "fallbacks": 7,
+  "research_rounds": 3,
+  "input_tokens": 274784,
+  "output_tokens": 9036,
+  "failed_calls": 0,
+  "phases": {
+    "night": 22,
+    "discussion": 32,
+    "vote": 16,
+    "council": 6
+  },
+  "action_totals": {
+    "finalized": 76,
+    "completed": 76,
+    "regular_completed": 69,
+    "fallback_completed": 7,
+    "cancelled": 0,
+    "failed": 0,
+    "applied": 76,
+    "persisted": 76,
+    "api_calls": 89,
+    "api_errors": 0,
+    "usage_known_calls": 89,
+    "input_tokens": 274784,
+    "output_tokens": 9036,
+    "retries": 13
+  },
+  "mlflow": {
+    "state": "ready",
+    "sent": 76,
+    "pending": 0,
+    "dropped": 0,
+    "failures": 1,
+    "stored_metric_count": 25
+  },
+  "mcp": "mcp"
+}

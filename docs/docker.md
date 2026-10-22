@@ -74,7 +74,7 @@ DB 쓰기를 중단한 상태에서 복사한다. 아티팩트를 사용했다�
 
 2026-10-22 검증: macOS 가상환경 211개, Linux ARM64 / Python 3.12.14 컨테이너 211개 테스트 통과. 별도 규칙봇 Compose 프로젝트에서 Vue 제공, 운영 키 인증, 실제 MCP stdio 검색, 게임 규칙 적용·DB 저장, MLflow 지표 저장을 확인했다. MLflow를 중단해도 게임 행동이 진행되며, 재기동 후 지표 전송이 복구됐다. 게임 서버 재시작 후 방·참가자 인증·운영 키·MLflow 기록이 유지되고 프로세스 카운터만 초기화됐다.
 
-[검증 기록](../reports/docker-verification-v1.json)에 범위를 명시했다. 외부 AI API 호출은 0회이며 실제 OpenAI 생성, AMD64 실행, 인터넷 공개 배포는 이번에 검증하지 않았다. Docker 자체가 모델 속도나 정답률을 높였다는 주장은 하지 않는다.
+[검증 기록](../reports/docker-verification-v1.json)에 범위를 명시했다. 이 격리 검증의 외부 AI API 호출은 0회다. 이후 [실제 OpenAI 7인 게임](../reports/docker-openai-live-v1.md)을 별도로 실행해 정상 종료와 행동 76건 저장·MLflow 전송을 확인했다. AMD64 실행과 인터넷 공개 배포는 검증하지 않았다. Docker 자체가 모델 속도나 정답률을 높였다는 주장은 하지 않는다.
 
 ```sh
 # 이미지 빌드 후 같은 Linux 단위·통합 테스트 실행. 호스트의 .env는 전달하지 않음.
