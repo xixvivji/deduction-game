@@ -39,3 +39,22 @@ test('reduced motion snaps and dead observer has no position or avatars',()=>{
  assert.equal(motion.sample(dead,5).self,null);
  assert.equal(motion.sample(dead,5).players.length,0);
 });
+test('door transitions snap camera and clear old-space avatars, including a rapid round trip',()=>{
+ const old=motion.packet({...world(990,[{id:'outside',x:980,y:500}]),space:'outside',space_epoch:0},{self:null,players:[]},'me',0,false);
+ const enter=motion.packet({...world(400),space:'warehouse',space_epoch:1},motion.sample(old,50),'me',50,false);
+ assert.equal(motion.sample(enter,50).self[0],400);
+ assert.equal(motion.sample(enter,50).players.length,1);
+ const roundtrip=motion.packet({...world(990),space:'outside',space_epoch:2},motion.sample(old,50),'me',60,false);
+ assert.equal(motion.sample(roundtrip,60).self[0],990);
+ assert.equal(motion.sample(roundtrip,60).players.length,1);
+});
+
+test('wide and portrait cameras keep the entrance avatar inside the actual viewport',()=>{
+ for(const ratio of [2.8,1.6,.9]){
+  const [x,y,w,h]=motion.camera({width:800,height:560},[400,488],ratio);
+  assert.ok(Math.abs(w/h-ratio)<1e-9);
+  assert.ok(x>=0&&y>=0&&x+w<=800&&y+h<=560);
+  assert.ok(400>x+22&&400<x+w-22);
+  assert.ok(488>y+30&&488<y+h-44);
+ }
+});

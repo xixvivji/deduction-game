@@ -319,13 +319,22 @@ class MoveBody(BaseModel):
     dy: StrictInt = Field(ge=-1,le=1)
     day: StrictInt = Field(ge=1)
     sequence: StrictInt = Field(ge=0)
+    space_epoch: StrictInt = Field(default=0,ge=0)
 
 
 class FieldBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    space_epoch: StrictInt = Field(default=0,ge=0)
     kind: str = Field(pattern="^(attack|report)$")
     target: str = Field(min_length=1,max_length=20)
     day: StrictInt = Field(ge=1)
+
+
+class DoorBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    door: str = Field(min_length=1,max_length=20)
+    day: StrictInt = Field(ge=1)
+    space_epoch: StrictInt = Field(ge=0)
 
 
 class JoinBody(BaseModel):
@@ -474,10 +483,23 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
             state=room.data.get("exploration",{})
             if room.data["status"]!="running" or not state.get("active") or state["day"]!=body.day or not room.game.players[pid].alive:
                 raise RuleError("지금은 이동할 수 없습니다")
+            if body.space_epoch != exploration.epoch(state,pid): raise RuleError("이동 공간이 변경되었습니다")
             if body.sequence>room.move_sequences.get(pid,-1):
                 room.move_sequences[pid]=body.sequence
                 room.intents[pid]=(body.dx,body.dy,time.monotonic())
         return {"accepted":True}
+
+    @app.post("/api/rooms/{rid}/door")
+    async def door(rid:str,body:DoorBody,request:Request):
+        hub,room,pid=auth(request,rid)
+        async with room.lock:
+            state=room.data.get("exploration",{})
+            if room.data["status"]!="running" or not state.get("active") or state["day"]!=body.day or body.space_epoch!=exploration.epoch(state,pid):
+                raise RuleError("현재 탐색 공간에서만 출입할 수 있습니다")
+            exploration.travel(state,room.game,pid,body.door)
+            room.intents.pop(pid,None)
+            hub.save(room)
+        return hub.view(room,pid)
 
     @app.post("/api/rooms/{rid}/field-action")
     async def field_action(rid:str,body:FieldBody,request:Request):
@@ -486,6 +508,7 @@ def create_app(db_path=None, client_factory=None, turn_seconds=90, auto_workers=
             state=room.data.get("exploration",{})
             if room.data["status"]!="running" or not state.get("active") or state["day"]!=body.day:
                 raise RuleError("현재 탐색에서만 사용할 수 있습니다")
+            if body.space_epoch != exploration.epoch(state,pid): raise RuleError("행동 공간이 변경되었습니다")
             exploration.act(state,room.game,pid,body.kind,body.target)
             if state.get("meeting") or room.game.phase=="finished":
                 exploration.finish(state,room.game);room.intents.clear();hub.queue(room)
