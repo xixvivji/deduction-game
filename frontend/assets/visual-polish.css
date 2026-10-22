@@ -119,3 +119,12 @@ button { transition:background-color .15s,border-color .15s,box-shadow .15s; }
  .dialogue-panel p { font-size:15px; } .panel-toggles span { font-size:11px; }
 }
 @media(prefers-reduced-motion:reduce) { button { transition:none; } }
+
+/* Door interaction and self-contained interiors. */
+.explore-canvas.indoors{background:#0b131a;border-color:#8c8267}
+.door-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0;padding:15px 18px;background:linear-gradient(110deg,#1b302d,#203431);border:1px solid #70806a66;border-radius:10px}
+.door-controls p{margin:4px 0 0;color:#d2d6bd;font-size:13px;line-height:1.6}
+.door-controls button{white-space:nowrap;min-height:44px;background:#dbc18d;color:#182c2b;border:1px solid #f1d7a2;font-weight:700;box-shadow:0 2px 0 #8c7851}
+.door-controls button:disabled{background:#35463d;color:#9da993;border-color:#66765c;box-shadow:none;opacity:1}
+.door-controls kbd{display:inline-grid;place-items:center;width:22px;height:24px;margin-right:8px;border:1px solid currentColor;border-radius:4px;font-family:inherit}
+@media(max-width:600px){.door-controls{align-items:stretch;flex-direction:column;gap:10px;padding:14px}.door-controls button{width:100%}.door-controls p{font-size:12px}}
